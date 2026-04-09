@@ -1,0 +1,208 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인플루언서 참여율 계산기</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0c0c0f;--card:#16161a;--card2:#1e1e24;--border:#2a2a32;--border2:#35353f;--t1:#f0eff4;--t2:#9896a3;--t3:#5e5c6b;--accent:#8b7cf7;--accent2:#a78bfa;--accent-bg:rgba(139,124,247,.08);--accent-border:rgba(139,124,247,.2);--green:#34d399;--green-bg:rgba(52,211,153,.08);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.08);--red:#f87171;--red-bg:rgba(248,113,113,.08);--gray:#6b7280;--gray-bg:rgba(107,114,128,.08);--radius:12px;--radius-sm:8px;--shadow:0 1px 3px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.2)}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;display:flex;justify-content:center;padding:40px 16px}
+.wrap{max-width:520px;width:100%}
+.header{margin-bottom:36px}
+.header h1{font-size:22px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px}
+.header p{font-size:13px;color:var(--t3);line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border);margin-bottom:14px}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.card-label{font-size:12px;color:var(--t3);margin-bottom:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.platforms{display:flex;gap:6px}
+.platforms button{flex:1;padding:10px 0;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--t3);transition:all .25s;font-family:inherit}
+.platforms button:hover{border-color:var(--border2);color:var(--t2)}
+.platforms button.active{border-color:var(--accent);color:var(--accent2);background:var(--accent-bg)}
+input[type=number]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--card2);color:var(--t1);outline:none;transition:border-color .2s;font-family:inherit;-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+input[type=number]:focus{border-color:var(--accent)}
+input[type=number]::placeholder{color:var(--t3)}
+.fol-input{font-size:20px;font-weight:600;padding:16px;letter-spacing:-.3px;text-align:center;background:transparent;border:1px dashed var(--border2)}
+.fol-input:focus{border-style:solid;border-color:var(--accent)}
+.col-labels{display:flex;gap:8px;padding-left:34px;padding-right:36px;margin-bottom:6px}
+.col-labels span{flex:1;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.row .num{font-size:11px;color:var(--t3);min-width:26px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.row .field{flex:1}
+.row .field input{font-size:13px;padding:10px 12px;background:var(--bg);border-color:transparent}
+.row .field input:focus{border-color:var(--accent);background:var(--card2)}
+.row .remove{background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:6px 10px;border-radius:6px;transition:all .15s;line-height:1}
+.row .remove:hover{color:var(--red);background:var(--red-bg)}
+.add-btn{width:100%;padding:10px;border-radius:var(--radius-sm);font-size:12px;border:1px dashed var(--border);background:transparent;color:var(--t3);cursor:pointer;margin-top:4px;transition:all .2s;font-family:inherit;font-weight:500}
+.add-btn:hover{border-color:var(--accent-border);color:var(--accent2);background:var(--accent-bg)}
+.result{margin-top:24px;overflow:hidden;animation:slideUp .35s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.result-main{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden}
+.result-main::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--green),var(--amber))}
+.result-top{display:flex;justify-content:space-between;align-items:flex-start}
+.rate-label{font-size:11px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.rate-value{font-size:42px;font-weight:700;letter-spacing:-1px;background:linear-gradient(135deg,var(--t1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.rate-sub{font-size:12px;color:var(--t3);margin-top:4px}
+.grade-wrap{text-align:center}
+.grade-box{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;transition:all .3s}
+.grade-desc{font-size:11px;color:var(--t2);margin-top:6px;font-weight:500}
+.divider{height:1px;background:var(--border);margin:20px 0}
+.per-post{display:flex;gap:6px;flex-wrap:wrap}
+.per-post span{padding:5px 12px;border-radius:20px;font-size:12px;background:var(--card2);color:var(--t2);border:1px solid var(--border);font-variant-numeric:tabular-nums;font-weight:500}
+.notion-row{margin-top:20px;padding:14px 16px;border-radius:var(--radius-sm);background:var(--accent-bg);border:1px solid var(--accent-border);font-size:12px;color:var(--t2);line-height:2}
+.notion-row strong{color:var(--t1);font-weight:600}
+.notion-label{font-size:10px;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px}
+.score-bar{display:flex;gap:4px;margin-top:16px}
+.score-bar .seg{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .3s}
+.hidden{display:none}
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div class="badge">Engagement Calculator</div>
+    <h1>인플루언서 참여율 계산기</h1>
+    <p>최근 게시물 데이터를 입력하면 참여율과 등급을 자동 산출합니다</p>
+  </div>
+
+  <div class="card">
+    <div class="card-label">플랫폼 선택</div>
+    <div class="platforms" id="platforms">
+      <button class="active" data-p="youtube">YouTube</button>
+      <button data-p="instagram">Instagram</button>
+      <button data-p="tiktok">TikTok</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label" id="fol-label">구독자 수</div>
+    <input class="fol-input" type="number" id="followers" placeholder="0" oninput="calc()">
+  </div>
+
+  <div class="card">
+    <div class="card-label">게시물 데이터</div>
+    <div class="col-labels" id="col-labels"></div>
+    <div id="rows"></div>
+    <button class="add-btn" onclick="addRow()">+ 게시물 추가</button>
+  </div>
+
+  <div class="result hidden" id="result">
+    <div class="result-main">
+      <div class="result-top">
+        <div>
+          <div class="rate-label">평균 참여율</div>
+          <div class="rate-value" id="avg-rate">0%</div>
+          <div class="rate-sub" id="count-label"></div>
+        </div>
+        <div class="grade-wrap">
+          <div class="grade-box" id="grade-box">-</div>
+          <div class="grade-desc" id="grade-desc"></div>
+        </div>
+      </div>
+      <div class="score-bar" id="score-bar"></div>
+      <div class="divider"></div>
+      <div class="rate-label" style="margin-bottom:8px">게시물별 참여율</div>
+      <div class="per-post" id="per-post"></div>
+      <div class="notion-row">
+        <div class="notion-label">Notion 입력값</div>
+        <span id="notion-row"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const P = {
+  youtube: { label:"구독자 수", fields:["조회수","좋아요","댓글"], keys:["views","likes","comments"], useViews:true },
+  instagram: { label:"팔로워 수", fields:["좋아요","댓글"], keys:["likes","comments"], useViews:false },
+  tiktok: { label:"팔로워 수", fields:["조회수","좋아요","댓글","공유"], keys:["views","likes","comments","shares"], useViews:true }
+};
+let plat = "youtube", rows = [{}];
+
+document.querySelectorAll("#platforms button").forEach(b => {
+  b.onclick = () => {
+    plat = b.dataset.p; rows = [{}];
+    document.querySelectorAll("#platforms button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    render();
+  };
+});
+
+function render() {
+  const p = P[plat];
+  document.getElementById("fol-label").textContent = p.label;
+  document.getElementById("col-labels").innerHTML = p.fields.map(f => `<span>${f}</span>`).join("") + '<span style="width:36px"></span>';
+  const c = document.getElementById("rows");
+  c.innerHTML = "";
+  rows.forEach((d, i) => {
+    const r = document.createElement("div");
+    r.className = "row";
+    r.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span>` +
+      p.keys.map(k => `<div class="field"><input type="number" placeholder="${p.fields[p.keys.indexOf(k)]}" value="${d[k]||''}" oninput="upd(${i},'${k}',this.value)"></div>`).join("") +
+      `<button class="remove" onclick="del(${i})" title="삭제">&times;</button>`;
+    c.appendChild(r);
+  });
+  calc();
+}
+
+function upd(i, k, v) { rows[i][k] = v; calc(); }
+function addRow() { rows.push({}); render(); }
+function del(i) { if (rows.length > 1) { rows.splice(i, 1); render(); } }
+
+function calc() {
+  const fol = Number(document.getElementById("followers").value);
+  const p = P[plat];
+  const el = document.getElementById("result");
+
+  if (!fol) { el.classList.add("hidden"); return; }
+  const valid = rows.filter(r => p.useViews ? Number(r.views) > 0 : Number(r.likes) > 0);
+  if (!valid.length) { el.classList.add("hidden"); return; }
+
+  const rates = valid.map(r => {
+    const l = Number(r.likes)||0, c = Number(r.comments)||0, s = Number(r.shares)||0;
+    return p.useViews ? ((l+c+s) / (Number(r.views)||1)) * 100 : ((l+c+s) / fol) * 100;
+  });
+
+  const avg = rates.reduce((a,b) => a+b, 0) / rates.length;
+  const fs = fol >= 500000 ? 3 : fol >= 100000 ? 2 : fol >= 10000 ? 1 : 0;
+  const es = avg >= 5 ? 3 : avg >= 3 ? 2 : avg >= 1 ? 1 : 0;
+  const total = fs + es;
+
+  let g, gc, gd;
+  if (total >= 5) { g="S"; gc="var(--accent)"; gd="최상위 영향력"; }
+  else if (total >= 3) { g="A"; gc="var(--green)"; gd="우수"; }
+  else if (total >= 2) { g="B"; gc="var(--amber)"; gd="보통"; }
+  else { g="C"; gc="var(--gray)"; gd="관찰 필요"; }
+
+  const gcMap = { S:"var(--accent-bg)", A:"var(--green-bg)", B:"var(--amber-bg)", C:"var(--gray-bg)" };
+  const bcMap = { S:"var(--accent-border)", A:"rgba(52,211,153,.25)", B:"rgba(251,191,36,.25)", C:"rgba(107,114,128,.25)" };
+
+  document.getElementById("avg-rate").textContent = avg.toFixed(2) + "%";
+  document.getElementById("count-label").textContent = `최근 ${valid.length}개 게시물 기준`;
+
+  const gb = document.getElementById("grade-box");
+  gb.textContent = g;
+  gb.style.background = gcMap[g];
+  gb.style.color = gc;
+  gb.style.border = `1.5px solid ${bcMap[g]}`;
+
+  document.getElementById("grade-desc").textContent = gd;
+
+  const bar = document.getElementById("score-bar");
+  bar.innerHTML = "";
+  for (let i = 0; i < 6; i++) {
+    const seg = document.createElement("div");
+    seg.className = "seg";
+    if (i < total) seg.style.background = gc;
+    bar.appendChild(seg);
+  }
+
+  document.getElementById("per-post").innerHTML = rates.map((r,i) => `<span>#${i+1}&ensp;${r.toFixed(2)}%</span>`).join("");
+  document.getElementById("notion-row").innerHTML = `팔로워 <strong>${fol.toLocaleString("ko-KR")}</strong>&ensp;&middot;&ensp;참여율 <strong>${avg.toFixed(2)}</strong>&ensp;&middot;&ensp;등급 <strong style="color:${gc}">${g}</strong>`;
+
+  el.classList.remove("hidden");
+}
+
+render();
+</script>
