@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Ads 캠페인 성과 분석 | 260414</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: #0F1923; color: #E8EDF2; min-height: 100vh;
+}
+.header {
+  background: linear-gradient(135deg, #0F1923 0%, #1A2D42 100%);
+  border-bottom: 1px solid #1E3A5F;
+  padding: 18px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-left h1 { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+.header-left p { font-size: 11px; color: #7A9BBF; margin-top: 3px; }
+.header-right { display: flex; gap: 8px; }
+.pbadge {
+  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s; border: none; background: none;
+}
+.pbadge-aos { background: rgba(61,220,132,.15); color: #3DDC84; border: 1px solid rgba(61,220,132,.3); }
+.pbadge-ios { background: rgba(0,122,255,.15); color: #4DA3FF; border: 1px solid rgba(0,122,255,.3); }
+.pbadge-all { background: rgba(255,255,255,.08); color: #CDD9E5; border: 1px solid rgba(255,255,255,.15); }
+.pbadge-aos:hover { background: rgba(61,220,132,.28); }
+.pbadge-ios:hover { background: rgba(0,122,255,.28); }
+.pbadge-all:hover { background: rgba(255,255,255,.15); }
+
+.nav-tabs {
+  display: flex; padding: 0 32px;
+  background: #111E2B; border-bottom: 1px solid #1E3A5F; overflow-x: auto;
+}
+.nav-tab {
+  padding: 13px 20px; font-size: 13px; font-weight: 500; color: #6B8BAA;
+  cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .2s;
+}
+.nav-tab:hover { color: #CDD9E5; }
+.nav-tab.active { color: #fff; border-bottom-color: #4DA3FF; }
+.nav-tab.active-aos { color: #3DDC84; border-bottom-color: #3DDC84; }
+
+.main { padding: 22px 32px; max-width: 1440px; margin: 0 auto; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── Section label ── */
+.slabel {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; margin-top: 26px;
+}
+.slabel:first-child { margin-top: 0; }
+.slabel h2 { font-size: 11px; font-weight: 700; color: #7A9BBF; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+.slabel .line { flex: 1; height: 1px; background: #1E3A5F; }
+.slabel .badge {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  background: rgba(77,163,255,.12); color: #4DA3FF; border: 1px solid rgba(77,163,255,.25);
+  white-space: nowrap;
+}
+.slabel .badge-aos { background: rgba(61,220,132,.12); color: #3DDC84; border-color: rgba(61,220,132,.25); }
+.slabel .badge-warn { background: rgba(245,166,35,.12); color: #F5A623; border-color: rgba(245,166,35,.25); }
+
+/* ── Insight boxes ── */
+.insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.insight-box {
+  background: #141F2E; border: 1px solid #1E3A5F; border-radius: 12px;
+  padding: 16px 18px; border-left: 3px solid;
+}
+.insight-box.positive { border-left-color: #3DDC84; }
+.insight-box.warning  { border-left-color: #F5A623; }
+.insight-box.action   { border-left-color: #4DA3FF; grid-column: span 2; }
+.insight-box.negative { border-left-color: #FF5353; }
+.insight-box h3 { font-size: 12px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.insight-box.positive h3 { color: #3DDC84; }
+.insight-box.warning  h3 { color: #F5A623; }
+.insight-box.action   h3 { color: #4DA3FF; }
+.insight-box.negative h3 { color: #FF5353; }
+.insight-box ul { list-style: none; }
+.insight-box ul li {
+  font-size: 12px; color: #A8BCCF; padding: 4px 0 4px 14px;
+  position: relative; line-height: 1.65;
+  border-bottom: 1px solid rgba(30,58,95,.4);
+}
+.insight-box ul li:last-child { border-bottom: none; }
+.insight-box ul li::before { content: '•'; position: absolute; left: 0; }
+.insight-box.positive ul li::before { color: #3DDC84; }
+.insight-box.warning  ul li::before { color: #F5A623; }
+.insight-box.action   ul li::before { color: #4DA3FF; }
+.insight-box.negative ul li::before { color: #FF5353; }
+
+/* ── KPI cards ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 10px; }
+.kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-card {
+  background: #141F2E; border: 1px solid #1E3A5F; border-radius: 12px;
+  padding: 14px 16px; position: relative; overflow: hidden; transition: transform .15s;
+}
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0;
+}
+.kpi-card.c-blue::before   { background: linear-gradient(90deg,#4DA3FF,#7BC4FF); }
+.kpi-card.c-green::before  { background: linear-gradient(90deg,#3DDC84,#5EE8A0); }
+.kpi-card.c-orange::before { background: linear-gradient(90deg,#F5A623,#FFC75A); }
+.kpi-card.c-red::before    { background: linear-gradient(90deg,#FF5353,#FF8080); }
+.kpi-card.c-purple::before { background: linear-gradient(90deg,#B06BFF,#CC99FF); }
+.kpi-card.c-gray::before   { background: linear-gradient(90deg,#6B8BAA,#8AA8C4); }
+.kpi-label { font-size: 10px; color: #6B8BAA; font-weight: 600; margin-bottom: 7px; letter-spacing: .3px; }
+.kpi-value { font-size: 20px; font-weight: 700; color: #E8EDF2; line-height: 1.1; margin-bottom: 5px; letter-spacing: -.5px; }
+.kpi-value.sm { font-size: 16px; }
+.kpi-change { font-size: 11px; font-weight: 600; }
+.kpi-change.up   { color: #3DDC84; }
+.kpi-change.down { color: #FF5353; }
+.kpi-change.flat { color: #7A9BBF; }
+.kpi-sub { font-size: 10px; color: #4D6A88; margin-top: 2px; }
+
+/* ── Charts layout ── */
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.charts-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.chart-box {
+  background: #141F2E; border: 1px solid #1E3A5F; border-radius: 12px; padding: 16px 18px;
+}
+.chart-box h3 { font-size: 12px; font-weight: 600; color: #CDD9E5; margin-bottom: 4px; }
+.chart-box p.sub { font-size: 10px; color: #4D6A88; margin-bottom: 14px; }
+.chart-wrap { position: relative; }
+.chart-wrap.h200 { height: 200px; }
+.chart-wrap.h220 { height: 220px; }
+.chart-wrap.h260 { height: 260px; }
+.chart-wrap.h300 { height: 300px; }
+
+/* ── Matrix quadrant ── */
+.quadrant-wrap {
+  background: #141F2E; border: 1px solid #1E3A5F; border-radius: 12px;
+  padding: 16px 18px; margin-bottom: 16px;
+}
+.quadrant-wrap h3 { font-size: 12px; font-weight: 600; color: #CDD9E5; margin-bottom: 3px; }
+.quadrant-wrap p.sub { font-size: 10px; color: #4D6A88; margin-bottom: 14px; }
+.quadrant-labels {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
+}
+.qlabel {
+  background: rgba(30,58,95,.4); border-radius: 6px; padding: 6px 10px; font-size: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.qlabel .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Table ── */
+.table-wrap {
+  background: #141F2E; border: 1px solid #1E3A5F; border-radius: 12px;
+  overflow: hidden; margin-bottom: 16px;
+}
+.table-title {
+  padding: 13px 18px 11px; font-size: 12px; font-weight: 600; color: #CDD9E5;
+  border-bottom: 1px solid #1E3A5F; display: flex; align-items: center; gap: 8px;
+}
+.tdot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.tdot-aos { background: #3DDC84; }
+.tdot-ios { background: #4DA3FF; }
+table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+thead th {
+  background: #0D1923; color: #6B8BAA; font-weight: 600;
+  padding: 9px 12px; text-align: right; white-space: nowrap; font-size: 10.5px;
+  border-bottom: 1px solid #1E3A5F; letter-spacing: .2px;
+}
+thead th:first-child, thead th.ta-l { text-align: left; }
+tbody tr { border-bottom: 1px solid rgba(30,58,95,.5); transition: background .15s; }
+tbody tr:hover { background: rgba(77,163,255,.04); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr.total-row { background: rgba(77,163,255,.06); border-top: 1px solid #1E3A5F; }
+tbody tr.total-row td { color: #CDD9E5; font-weight: 600; }
+tbody tr.new-camp td { color: #F5A623; }
+td { padding: 9px 12px; color: #A8BCCF; text-align: right; white-space: nowrap; }
+td:first-child { text-align: left; color: #CDD9E5; }
+.camp-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctag {
+  display: inline-block; padding: 1px 6px; border-radius: 4px;
+  font-size: 9px; font-weight: 700; margin-left: 5px; vertical-align: middle;
+}
+.tag-new  { background: rgba(245,166,35,.15); color: #F5A623; border: 1px solid rgba(245,166,35,.3); }
+.tag-best { background: rgba(61,220,132,.12); color: #3DDC84; border: 1px solid rgba(61,220,132,.3); }
+.tag-chg  { background: rgba(176,107,255,.12); color: #B06BFF; border: 1px solid rgba(176,107,255,.3); }
+
+/* ── First order bar (inline) ── */
+.fo-bar-wrap { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.fo-bar { height: 6px; border-radius: 3px; min-width: 4px; flex-shrink: 0; }
+
+/* ── WoW grid ── */
+.wow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.wow-item { background: #141F2E; border: 1px solid #1E3A5F; border-radius: 10px; padding: 14px 16px; }
+.wow-camp-name { font-size: 11px; color: #7A9BBF; margin-bottom: 10px; font-weight: 500; }
+.wow-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.wow-metric { text-align: center; }
+.wow-metric-label { font-size: 9.5px; color: #4D6A88; margin-bottom: 3px; }
+.wow-metric-val { font-size: 12.5px; font-weight: 700; }
+.cu { color: #3DDC84; }
+.cd { color: #FF5353; }
+.cn { color: #7A9BBF; }
+.cw { color: #F5A623; }
+
+/* ── Compare cards ── */
+.cmp-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+.cmp-card { background: #141F2E; border: 1px solid #1E3A5F; border-radius: 10px; padding: 14px; text-align: center; }
+.cmp-metric { font-size: 10px; color: #6B8BAA; margin-bottom: 10px; font-weight: 600; }
+.cmp-platforms { display: flex; justify-content: space-around; gap: 6px; }
+.cmp-pval { flex: 1; }
+.cmp-plabel { font-size: 9px; font-weight: 700; margin-bottom: 4px; }
+.cmp-plabel.aos { color: #3DDC84; }
+.cmp-plabel.ios { color: #4DA3FF; }
+.cmp-pvalue { font-size: 13px; font-weight: 700; color: #E8EDF2; }
+.cmp-divider { width: 1px; background: #1E3A5F; }
+
+/* ── Highlight ── */
+.hg  { color: #E8EDF2; font-weight: 600; }
+.hg-g{ color: #3DDC84; font-weight: 600; }
+.hg-r{ color: #FF5353; font-weight: 600; }
+.hg-y{ color: #F5A623; font-weight: 600; }
+.hg-b{ color: #4DA3FF; font-weight: 600; }
+.hg-p{ color: #B06BFF; font-weight: 600; }
+
+/* ── Summary card ── */
+.summary-card {
+  background: linear-gradient(135deg,#141F2E,#1A2D42);
+  border: 1px solid #1E3A5F; border-radius: 14px; padding: 20px 24px; margin-bottom: 16px;
+}
+.summary-card h3 { font-size: 13px; color: #CDD9E5; font-weight: 700; margin-bottom: 14px; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.summary-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(30,58,95,.5); }
+.summary-item:last-child { border-bottom: none; }
+.summary-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(77,163,255,.15); border: 1px solid rgba(77,163,255,.3);
+  color: #4DA3FF; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.summary-text { font-size: 12px; color: #A8BCCF; line-height: 1.65; }
+.summary-text strong { color: #CDD9E5; }
+
+.footer { text-align: center; padding: 20px 32px; color: #3A556A; font-size: 11px; border-top: 1px solid #141F2E; margin-top: 28px; }
+
+/* ── Metric legend ── */
+.metric-legend {
+  background: rgba(10,18,30,.6); border: 1px solid rgba(245,166,35,.22);
+  border-left: 3px solid #F5A623; border-radius: 10px;
+  padding: 13px 16px; margin-bottom: 16px;
+}
+.legend-title { font-size: 11px; font-weight: 700; color: #F5A623; margin-bottom: 10px; letter-spacing: .3px; }
+.legend-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.legend-item { background: rgba(30,58,95,.25); border-radius: 7px; padding: 9px 11px; }
+.l-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9.5px; font-weight: 700; margin-bottom: 5px; }
+.l-metric { font-size: 9px; color: #4D6A88; font-family: 'Menlo', monospace; margin-bottom: 4px; letter-spacing: .2px; }
+.l-desc { font-size: 11px; color: #A8BCCF; line-height: 1.55; }
+.l-formula { font-size: 10px; color: #6B8BAA; margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(30,58,95,.5); }
+.l-formula strong { color: #CDD9E5; }
+
+@media (max-width: 960px) {
+  .kpi-grid { grid-template-columns: repeat(3,1fr); }
+  .charts-row, .insight-grid, .wow-grid { grid-template-columns: 1fr; }
+  .insight-box.action { grid-column: span 1; }
+  .cmp-grid { grid-template-columns: repeat(2,1fr); }
+  .main { padding: 14px 16px; }
+  .legend-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Google Ads 캠페인 성과 분석</h1>
+    <p>AOS 260407-0413 &nbsp;|&nbsp; iOS 260406-0412 &nbsp;|&nbsp; Generated 2026.04.14</p>
+  </div>
+  <div class="header-right">
+    <button class="pbadge pbadge-all" onclick="switchTab('all')">전체 비교</button>
+    <button class="pbadge pbadge-aos" onclick="switchTab('aos')">AOS</button>
+    <button class="pbadge pbadge-ios" onclick="switchTab('ios')">iOS</button>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active-aos active" id="tab-aos" onclick="switchTab('aos')">📱 AOS 260407-0413</div>
+  <div class="nav-tab" id="tab-ios" onclick="switchTab('ios')">🍎 iOS 260406-0412</div>
+  <div class="nav-tab" id="tab-all" onclick="switchTab('all')">⚖️ AOS vs iOS 비교</div>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════════════════════════════
+     AOS SECTION
+═══════════════════════════════════════════ -->
+<div class="section active" id="sec-aos">
+
+  <!-- INSIGHTS -->
+  <div class="slabel"><h2>인사이트 및 Next Action</h2><div class="line"></div></div>
+  <div class="insight-grid">
+    <div class="insight-box positive">
+      <h3>✅ LV1_여성 · 프로모션 2주차 — 전략 방향 캠페인의 선전</h3>
+      <ul>
+        <li><strong>LV1_UAC_여성 — 같은 예산, 개선된 모든 지표:</strong> 예산 거의 동일(-0.65%)한데 LTV +20%(₩59,415→₩71,538), CAC -14%(₩139,334→₩119,971), 도메스틱율 48.3%→52.4%, Ret +3.86%p. 현재 예산 ₩3.6M이 성장을 제약하고 있을 가능성</li>
+        <li><strong>프로모션 2주차 LTV ₩85,775 (+103%):</strong> 1주차 ₩42,225는 학습 데이터였음 확인. CPP도 ₩72,809→₩22,792로 -69% 급락. 도메스틱율 44.2%로 전략 방향 부합. 이번 주 LTV 1위 캠페인</li>
+        <li><strong>전체 첫구매율 31.7%→33.1% (+1.4%p):</strong> 전략 방향 캠페인 확대로 신규 유저 기여 소폭 개선</li>
+      </ul>
+    </div>
+    <div class="insight-box warning">
+      <h3>🔍 LV1_UAC_남성 +120% 확대 역효과 — 최적 예산 구간이 있다</h3>
+      <ul>
+        <li><strong>예산 ₩8.2M → ₩18.0M (+120%) 확대에 품질 역전:</strong> LTV ₩75,350→₩62,931 (-16%), CAC ₩77,362→₩94,838 (+23%), 도메스틱율 38.8%→34.2% (-4.6%p), 첫구매율 40.3%→38.0%. 전주 기준 "MVP 캠페인"이었지만 2배 이상 확대로 품질 희석</li>
+        <li><strong>해석:</strong> 가장 퀄리티 좋은 타겟층을 이미 유입한 후 잔여 타겟으로 확장하면서 효율 저하. 구글 알고리즘의 타겟 소진 가능성</li>
+        <li><strong>[2차원 분석] 전략 방향 그룹 예산 비중 변화:</strong> 전주 30% → 이번 주 47%. LV1_남성 대규모 확대 덕분에 구조는 개선됐지만, LV1_남성 자체 품질이 저하되어 실질 개선은 제한적</li>
+      </ul>
+    </div>
+    <div class="insight-box negative">
+      <h3>⚠️ AOS 전체 CAC 3주 연속 상승 — 구조적 경고</h3>
+      <ul>
+        <li><strong>3주간 흐름: ₩85,738 → ₩93,057 → ₩105,868 (+23%):</strong> 단기 노이즈가 아닌 방향성 있는 악화. 공식 브랜드 구매자 획득이 매주 더 비싸지고 있음</li>
+        <li><strong>구매전환(251024) 구조적 효율 저하:</strong> 예산 동일(-0.25%)한데 CPP +27%, CAC +28%. 소재 피로도 or 타겟 경쟁 과열로 동일 예산 투입에 성과가 계속 하락</li>
+        <li><strong>앱설치(250410) 첫구매율 급락:</strong> 27.4%→17.6% (-9.8%p). 예산 -57% 삭감 이후 신규 유저 비중이 비정상적으로 낮음. 세그먼트 구성 변화 or 타겟 설정 이슈 점검 필요</li>
+      </ul>
+    </div>
+    <div class="insight-box action">
+      <h3>🎯 Next Action</h3>
+      <ul>
+        <li><strong>LV1_UAC_남성 예산 조정 ₩18M → ₩12-13M:</strong> 과도 확대가 품질 저하 원인이라면 조정 후 LTV·도메스틱율 회복 여부 확인. 동시에 LV1_여성에 예산을 재배분 (₩3.6M → ₩6M)</li>
+        <li><strong>LV1_여성 예산 증액 최우선:</strong> 동일 예산에 LTV +20%, 도메스틱율 52.4%, CAC -14% 개선. 현재 ₩3.6M은 성장 잠재력 대비 과소 투자. ₩6M 단계적 확대 실험 제안</li>
+        <li><strong>프로모션 3주차 데이터 확인 후 증액:</strong> 2주차 LTV 폭등 확인. 3주차에도 유지되면 ₩3M 수준으로 증액 판단</li>
+        <li><strong>구매전환(251024) 소재 교체 긴급:</strong> 3주 연속 CAC 상승. 소재 피로도 가능성 높음. 공식 브랜드 집중 소재 교체 + 예산 일부 LV1 군으로 이동</li>
+        <li><strong>앱설치(250410) 첫구매율 원인 분석:</strong> 17.6%는 비정상. 예산 삭감 후 타겟 pool 변화 점검</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="slabel"><h2>전체 KPI</h2><div class="line"></div><span class="badge badge-warn">260407-0413 vs 260331-0406</span></div>
+  <div class="kpi-grid">
+    <div class="kpi-card c-orange">
+      <div class="kpi-label">총 광고비</div>
+      <div class="kpi-value sm">₩49,758,109</div>
+      <div class="kpi-change down">▲ +11% 전주 대비</div>
+    </div>
+    <div class="kpi-card c-gray">
+      <div class="kpi-label">설치 수</div>
+      <div class="kpi-value">12,083</div>
+      <div class="kpi-sub">CPI ₩4,118 (+13%)</div>
+    </div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-label">첫구매 (신규 유저)</div>
+      <div class="kpi-value">750건</div>
+      <div class="kpi-sub">첫구매율 33.1% (전주 31.7%)</div>
+    </div>
+    <div class="kpi-card c-red">
+      <div class="kpi-label">CPP (구매당 비용)</div>
+      <div class="kpi-value">₩21,978</div>
+      <div class="kpi-change down">▲ +10%</div>
+    </div>
+    <div class="kpi-card c-red">
+      <div class="kpi-label">CAC (공식·도메스틱)</div>
+      <div class="kpi-value">₩105,868</div>
+      <div class="kpi-change down">▲ +14%</div>
+      <div class="kpi-sub">도메스틱 구매율 34.3% ↑전주 33.8%</div>
+    </div>
+    <div class="kpi-card c-orange">
+      <div class="kpi-label">D7 LTV / Ret 롤링</div>
+      <div class="kpi-value sm">₩64,081</div>
+      <div class="kpi-sub">LTV -3% | 리텐션 13.19% (+0.08%p)</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1: Budget + 첫구매율 -->
+  <div class="slabel" style="margin-top:24px;"><h2>예산 배분 & 신규 유저 기여</h2><div class="line"></div></div>
+  <div class="charts-row">
+    <div class="chart-box">
+      <h3>캠페인별 예산 배분</h3>
+      <p class="sub">총 ₩49,758,109 · 5개 캠페인</p>
+      <div class="chart-wrap h220"><canvas id="aosBudgetChart"></canvas></div>
+    </div>
+    <div class="chart-box">
+      <h3>캠페인별 첫구매율 (신규 유저 기여도)</h3>
+      <p class="sub">첫구매 수 / 총 구매 수 · 전체 평균 33.1%</p>
+      <div class="chart-wrap h220"><canvas id="aosFirstOrderChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2: User Quality Matrix -->
+  <div class="slabel"><h2>유저 퀄리티 매트릭스</h2><div class="line"></div><span class="badge">X: 첫구매율(신규기여) · Y: D7 LTV · 원 크기: 예산</span></div>
+  <div class="quadrant-wrap">
+    <h3>캠페인 포지셔닝 — 어떤 유저를 얼마에 데려오고 있나</h3>
+    <p class="sub">우상단(높은 첫구매율 + 높은 LTV) = 이상적. 원의 크기는 예산 비중.</p>
+    <div class="chart-wrap h300"><canvas id="aosMatrixChart"></canvas></div>
+    <div class="quadrant-labels">
+      <div class="qlabel"><div class="dot" style="background:#FF85A1"></div><strong style="color:#FF85A1">LV1_UAC_여성</strong> — 첫구매율 40.3% + LTV 최고. 전략 방향 부합</div>
+      <div class="qlabel"><div class="dot" style="background:#B06BFF"></div><strong style="color:#B06BFF">프로모션(2주차)</strong> — LTV ₩85,775 폭등(+103%). 도메스틱율 44.2% 우수</div>
+      <div class="qlabel"><div class="dot" style="background:#4DA3FF"></div><strong style="color:#4DA3FF">구매전환(251024)</strong> — 첫구매율·LTV 모두 낮음. CAC 3주 연속 상승 중</div>
+      <div class="qlabel"><div class="dot" style="background:#F5A623"></div><strong style="color:#F5A623">앱설치(250410)</strong> — 첫구매율 17.6%로 급락. 예산 삭감 후 신규 기여 급감</div>
+    </div>
+  </div>
+
+  <!-- STRATEGY POSITIONING MATRIX -->
+  <div class="slabel"><h2>캠페인 전략 포지셔닝</h2><div class="line"></div><span class="badge badge-warn">첫구매율(신규 유저) × 도메스틱율(공식 브랜드) · 원 크기: 예산</span></div>
+  <div class="quadrant-wrap">
+    <h3>신규 고객 기여 × 공식 브랜드 기여 — 전략 방향 정렬도</h3>
+    <p class="sub">우상단(첫구매율↑ + 도메스틱율↑) = 신규 유저가 공식 브랜드를 산다 → 전략 최적. 좌하단 = 기존 유저가 비공식 구매 → 전략 역방향.</p>
+    <div class="chart-wrap h300"><canvas id="aosStrategyChart"></canvas></div>
+    <div class="quadrant-labels">
+      <div class="qlabel" style="background:rgba(176,107,255,.08);border:1px solid rgba(176,107,255,.2)"><div class="dot" style="background:#FF85A1"></div><strong style="color:#FF85A1">LV1_UAC_여성 (우상단)</strong> — 첫구매율 40.3% × 도메스틱율 52.4%. 전략 최적</div>
+      <div class="qlabel" style="background:rgba(61,220,132,.05)"><div class="dot" style="background:#B06BFF"></div><strong style="color:#B06BFF">프로모션</strong> — 39.0% × 44.2%. 우상단 진입. 예산 증액 후보</div>
+      <div class="qlabel" style="background:rgba(255,83,83,.05);border:1px solid rgba(255,83,83,.15)"><div class="dot" style="background:#4DA3FF"></div><strong style="color:#4DA3FF">구매전환(251024) (좌하단)</strong> — 29.9% × 31.2%. 기존 유저 + 비공식 구매. 전략 역방향</div>
+      <div class="qlabel"><div class="dot" style="background:#F5A623"></div><strong style="color:#F5A623">앱설치(250410)</strong> — 17.6% × 35.2%. 첫구매율 급락. 신규 기여 최하위</div>
+    </div>
+  </div>
+
+  <!-- CAMPAIGN TABLE -->
+  <div class="slabel"><h2>캠페인별 상세 성과</h2><div class="line"></div></div>
+  <div class="metric-legend">
+    <div class="legend-title">📌 구매 지표 정의 — 세 지표가 각각 다른 차원을 측정한다</div>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <span class="l-tag" style="background:rgba(77,163,255,.15);color:#4DA3FF;">전체 구매</span>
+        <div class="l-metric">COMPLETE_ORDER_PER_GOODS</div>
+        <div class="l-desc">캠페인 경유 발생한 모든 구매. 병행수입·공식 브랜드·기타 전부 포함</div>
+        <div class="l-formula">CPP = 광고비 ÷ 전체 구매</div>
+      </div>
+      <div class="legend-item">
+        <span class="l-tag" style="background:rgba(61,220,132,.15);color:#3DDC84;">첫구매 (신규 고객)</span>
+        <div class="l-metric">COMPLETE_FIRST_ORDER</div>
+        <div class="l-desc">해당 유저의 생애 최초 구매. 신규 고객 전환 지표. 전체 구매의 부분집합</div>
+        <div class="l-formula"><strong>첫구매율</strong> = 첫구매 ÷ 전체 구매</div>
+      </div>
+      <div class="legend-item">
+        <span class="l-tag" style="background:rgba(245,166,35,.15);color:#F5A623;">공식 브랜드 구매</span>
+        <div class="l-metric">COMPLETE_ORDER_DOMESTIC</div>
+        <div class="l-desc">공식 입점(도메스틱) 브랜드 구매. 병행수입·보세 제외. 플랫폼 전략 KPI</div>
+        <div class="l-formula"><strong>도메스틱율</strong> = 공식 브랜드 구매 ÷ 전체 구매 &nbsp;|&nbsp; <strong>CAC</strong> = 광고비 ÷ 공식 브랜드 구매 유저 수</div>
+      </div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-title"><span class="tdot tdot-aos"></span>AOS 캠페인 성과표 · 260407-0413</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="ta-l">캠페인</th>
+          <th>광고비</th><th>설치</th><th>CPI</th>
+          <th>첫구매</th><th>첫구매율</th>
+          <th>총구매</th><th>도메스틱율</th><th>CPP</th><th>CAC</th>
+          <th>D7 LTV</th><th>Ret롤링</th><th>총수익</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="camp-name">구매전환 (251024)</div></td>
+          <td>22,293,369</td><td>5,476</td><td>₩4,071</td>
+          <td>296</td>
+          <td><div class="fo-bar-wrap"><span>29.9%</span><div class="fo-bar" style="width:42px;background:#4DA3FF;opacity:.7"></div></div></td>
+          <td>991</td><td style="color:#FF8080">31.2%</td><td>₩22,496</td><td style="color:#FF8080">₩113,742</td>
+          <td style="color:#FF8080">₩62,424</td><td style="color:#FF8080">11.94%</td><td>5,680,580</td>
+        </tr>
+        <tr>
+          <td><div class="camp-name">LV1_UAC_남성 <span class="ctag tag-chg">LV업</span></div></td>
+          <td>18,019,212</td><td>4,698</td><td>₩3,836</td>
+          <td>345</td>
+          <td><div class="fo-bar-wrap"><span>38.0%</span><div class="fo-bar" style="width:53px;background:#3DDC84;opacity:.8"></div></div></td>
+          <td>907</td><td>34.2%</td><td style="color:#3DDC84">₩19,867</td><td>₩94,838</td>
+          <td>₩62,931</td><td>13.85%</td><td>9,124,930</td>
+        </tr>
+        <tr>
+          <td><div class="camp-name">앱설치 (250410)</div></td>
+          <td>4,091,435</td><td>588</td><td>₩6,958</td>
+          <td>29</td>
+          <td><div class="fo-bar-wrap"><span style="color:#FF5353">17.6%</span><div class="fo-bar" style="width:25px;background:#F5A623;opacity:.7"></div></div></td>
+          <td>165</td><td>35.2%</td><td>₩24,797</td><td>₩97,415</td>
+          <td style="color:#FF8080">₩54,388</td><td style="color:#3DDC84">16.06%</td><td>435,100</td>
+        </tr>
+        <tr>
+          <td><div class="camp-name">LV1_UAC_여성 <span class="ctag tag-chg">LV업</span><span class="ctag tag-best">LTV↑ best</span></div></td>
+          <td>3,599,132</td><td>905</td><td>₩3,977</td>
+          <td>50</td>
+          <td><div class="fo-bar-wrap"><span>40.3%</span><div class="fo-bar" style="width:56px;background:#FF85A1;opacity:.8"></div></div></td>
+          <td>124</td><td style="color:#3DDC84">52.4%</td><td>₩29,025</td><td style="color:#FF8080">₩119,971</td>
+          <td style="color:#3DDC84">₩71,538</td><td>12.47%</td><td>1,502,290</td>
+        </tr>
+        <tr>
+          <td><div class="camp-name">프로모션 <span class="ctag tag-new">2주차</span><span class="ctag tag-best">LTV↑↑ best</span></div></td>
+          <td>1,754,960</td><td>416</td><td>₩4,219</td>
+          <td>30</td>
+          <td><div class="fo-bar-wrap"><span>39.0%</span><div class="fo-bar" style="width:55px;background:#B06BFF;opacity:.7"></div></div></td>
+          <td>77</td><td style="color:#3DDC84">44.2%</td><td>₩22,792</td><td style="color:#FF8080">₩146,247</td>
+          <td style="color:#3DDC84"><strong>₩85,775</strong></td><td style="color:#FF8080">4.45%</td><td>943,520</td>
+        </tr>
+        <tr class="total-row">
+          <td>Total</td>
+          <td>49,758,109</td><td>12,083</td><td>₩4,118</td>
+          <td>750</td><td>33.1%</td>
+          <td>2,264</td><td>34.3%</td><td>₩21,978</td><td>₩105,868</td>
+          <td>₩64,081</td><td>13.19%</td><td>17,686,420</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WoW -->
+  <div class="slabel"><h2>전주 대비 변화</h2><div class="line"></div><span class="badge badge-warn">260331-0406 → 260407-0413</span></div>
+  <div class="wow-grid">
+    <div class="wow-item">
+      <div class="wow-camp-name">📦 구매전환 (251024) · 예산 44.8%</div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cn">-0.25%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cd">+24%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cd">+27%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cd">+28%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cu">28.4%→29.9%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cn">-1%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cd">-1.08%p</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cd">CAC 3주↑</div></div>
+      </div>
+    </div>
+    <div class="wow-item">
+      <div class="wow-camp-name">📦 LV1_UAC_남성 · 예산 36.2% <span style="color:#F5A623;font-size:10px;">▲+120%</span></div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cw">+120%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cd">+15%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cd">+17%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cd">+23%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cd">40.3%→38.0%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cd">-16%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cd">-1.47%p</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cd">확대 역효과⚠️</div></div>
+      </div>
+    </div>
+    <div class="wow-item">
+      <div class="wow-camp-name">📦 앱설치 (250410) · 예산 8.2% <span style="color:#3DDC84;font-size:10px;">▼-57%</span></div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cu">-57%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cd">+34%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cn">+1%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cu">-7%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cd">27.4%→17.6%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cd">-21%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cu">+3.03%p</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cn">혼조</div></div>
+      </div>
+    </div>
+    <div class="wow-item">
+      <div class="wow-camp-name">📦 LV1_UAC_여성 · 예산 7.2%</div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cn">-0.65%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cd">+11%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cu">-30%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cu">-14%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cd">49.4%→40.3%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cu">+20%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cu">+3.86%p</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cu">LTV↑ 주목</div></div>
+      </div>
+    </div>
+    <div class="wow-item">
+      <div class="wow-camp-name">📦 프로모션 · 예산 3.5% <span style="color:#F5A623;font-size:10px;">▲+72%</span></div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cw">+72%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cu">-40%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cu">-69%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cu">-14%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cd">42.9%→39.0%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cu"><strong>+103%</strong></div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cn">신규</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cu">LTV급등↑↑</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end AOS -->
+
+
+<!-- ═══════════════════════════════════════════
+     iOS SECTION
+═══════════════════════════════════════════ -->
+<div class="section" id="sec-ios">
+
+  <!-- INSIGHTS -->
+  <div class="slabel"><h2>인사이트 및 Next Action</h2><div class="line"></div></div>
+  <div class="insight-grid">
+    <div class="insight-box negative">
+      <h3>⚠️ 예산 -66% 과도 축소 — LTV -37%, 도메스틱율 -8.3%p 동반 하락</h3>
+      <ul>
+        <li><strong>비용 효율 지표는 개선됐지만 유저 퀄리티는 역행:</strong> CPP -46%, CAC -40%는 단순히 예산이 극단적으로 줄어서. 실질 유저 가치: LTV ₩81,686→₩51,813 (-37%), 도메스틱율 35.6%→27.3% (-8.3%p)</li>
+        <li><strong>앱설치(240416) 도메스틱율 36.3%→19.7% 급락:</strong> 예산 ₩0.5M 수준에서는 도메스틱 구매 성향이 낮은 유저 위주 유입. 지난주 "스위트스팟 ₩3M 유지" 제안과 달리 ₩0.5M으로 과도 삭감</li>
+        <li><strong>iOS 전략 KPI 역행:</strong> 첫구매율은 41.0%로 유지됐지만 공식 브랜드 기여(도메스틱율)는 크게 하락. 신규 유저는 들어오지만 공식 브랜드를 사지 않는 상황</li>
+      </ul>
+    </div>
+    <div class="insight-box positive">
+      <h3>🔍 LV1_UAC_남성 — 일부 긍정 신호</h3>
+      <ul>
+        <li><strong>비용 효율 개선:</strong> CPI -42%(₩8,644→₩5,023), CPP -51%, CAC -47%. 이전에 우려했던 CPI 과열(+121%)이 해소됨. 예산 최적화의 긍정적 결과</li>
+        <li><strong>리텐션 개선:</strong> Ret 롤링 14.42%→17.96% (+3.54%p). 첫구매율도 42.1%→46.6% (+4.5%p). 적정 예산 구간(~₩1.6M)에서 재방문과 신규 전환 지표 개선</li>
+        <li><strong>도메스틱율은 34.2%로 유지:</strong> 앱설치(240416)와 달리 LV1_남성의 도메스틱 구매 비중은 예산 변화에 관계없이 안정적</li>
+      </ul>
+    </div>
+    <div class="insight-box action">
+      <h3>🎯 Next Action</h3>
+      <ul>
+        <li><strong>iOS 예산 복원 필요:</strong> 현재 ₩2.1M은 최적 구간 하한선 이하. 앱설치(240416) ₩1.5-2M + LV1_남성 ₩2-2.5M → 총 ₩3.5-4.5M으로 복원. LTV·도메스틱율 회복 확인</li>
+        <li><strong>앱설치(240416) 도메스틱율 복원 모니터링:</strong> 19.7%는 전략적으로 위험 수준. 예산 복원 시 30%+ 이상으로 회복되는지 확인. 회복 안 된다면 타겟 세그먼트 자체 변화 가능성 검토</li>
+        <li><strong>LV1_남성 현 수준 유지:</strong> 비용 효율 개선 + Ret 개선 신호. LTV 하락은 예산 수준 영향일 가능성 높음. ₩2-2.5M 수준 유지하면서 LTV 추이 확인</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="slabel"><h2>전체 KPI</h2><div class="line"></div><span class="badge">260406-0412 vs 260330-0405</span></div>
+  <div class="kpi-grid">
+    <div class="kpi-card c-red">
+      <div class="kpi-label">총 광고비</div>
+      <div class="kpi-value sm">₩2,125,799</div>
+      <div class="kpi-change up">▼ -66% 전주 대비</div>
+    </div>
+    <div class="kpi-card c-gray">
+      <div class="kpi-label">설치 / SKAN</div>
+      <div class="kpi-value sm">534 / 1,367</div>
+      <div class="kpi-sub">CPI ₩3,981 (-5%)</div>
+    </div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-label">첫구매 (신규 유저)</div>
+      <div class="kpi-value">57건</div>
+      <div class="kpi-sub">첫구매율 41.0% (전주 41.0% 유지)</div>
+    </div>
+    <div class="kpi-card c-green">
+      <div class="kpi-label">CPP (구매당 비용)</div>
+      <div class="kpi-value">₩15,294</div>
+      <div class="kpi-change up">▼ -46%</div>
+    </div>
+    <div class="kpi-card c-green">
+      <div class="kpi-label">CAC (공식·도메스틱)</div>
+      <div class="kpi-value">₩81,762</div>
+      <div class="kpi-change up">▼ -40%</div>
+      <div class="kpi-sub">도메스틱 구매율 27.3% ↓전주 35.6%</div>
+    </div>
+    <div class="kpi-card c-red">
+      <div class="kpi-label">D7 LTV / Ret 롤링</div>
+      <div class="kpi-value sm">₩51,813</div>
+      <div class="kpi-sub">LTV -37% ↓ | 리텐션 13.86% (-0.06%p)</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="slabel" style="margin-top:24px;"><h2>예산 배분 & 신규 유저 기여</h2><div class="line"></div></div>
+  <div class="charts-row">
+    <div class="chart-box">
+      <h3>캠페인별 예산 배분</h3>
+      <p class="sub">총 ₩2,125,799 · 2개 캠페인</p>
+      <div class="chart-wrap h220"><canvas id="iosBudgetChart"></canvas></div>
+    </div>
+    <div class="chart-box">
+      <h3>캠페인별 첫구매율 & LTV</h3>
+      <p class="sub">신규 유저 기여도 vs 장기 가치 · 전체 평균 41.0%</p>
+      <div class="chart-wrap h220"><canvas id="iosFirstOrderChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="slabel"><h2>유저 퀄리티 매트릭스</h2><div class="line"></div><span class="badge">X: 첫구매율 · Y: D7 LTV · 원 크기: 예산</span></div>
+  <div class="quadrant-wrap">
+    <h3>캠페인 포지셔닝 — iOS</h3>
+    <p class="sub">LV1_UAC_남성 첫구매율·Ret 개선. 앱설치(240416) LTV 하락 및 도메스틱율 급락 주의.</p>
+    <div class="chart-wrap h260"><canvas id="iosMatrixChart"></canvas></div>
+  </div>
+
+  <!-- CAMPAIGN TABLE -->
+  <div class="slabel"><h2>캠페인별 상세 성과</h2><div class="line"></div></div>
+  <div class="metric-legend">
+    <div class="legend-title">📌 구매 지표 정의 — 세 지표가 각각 다른 차원을 측정한다</div>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <span class="l-tag" style="background:rgba(77,163,255,.15);color:#4DA3FF;">전체 구매</span>
+        <div class="l-metric">COMPLETE_ORDER_PER_GOODS</div>
+        <div class="l-desc">캠페인 경유 발생한 모든 구매. 병행수입·공식 브랜드·기타 전부 포함</div>
+        <div class="l-formula">CPP = 광고비 ÷ 전체 구매</div>
+      </div>
+      <div class="legend-item">
+        <span class="l-tag" style="background:rgba(61,220,132,.15);color:#3DDC84;">첫구매 (신규 고객)</span>
+        <div class="l-metric">COMPLETE_FIRST_ORDER</div>
+        <div class="l-desc">해당 유저의 생애 최초 구매. 신규 고객 전환 지표. 전체 구매의 부분집합</div>
+        <div class="l-formula"><strong>첫구매율</strong> = 첫구매 ÷ 전체 구매</div>
+      </div>
+      <div class="legend-item">
+        <span class="l-tag" style="background:rgba(245,166,35,.15);color:#F5A623;">공식 브랜드 구매</span>
+        <div class="l-metric">COMPLETE_ORDER_DOMESTIC</div>
+        <div class="l-desc">공식 입점(도메스틱) 브랜드 구매. 병행수입·보세 제외. 플랫폼 전략 KPI</div>
+        <div class="l-formula"><strong>도메스틱율</strong> = 공식 브랜드 구매 ÷ 전체 구매 &nbsp;|&nbsp; <strong>CAC</strong> = 광고비 ÷ 공식 브랜드 구매 유저 수</div>
+      </div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-title"><span class="tdot tdot-ios"></span>iOS 캠페인 성과표 · 260406-0412</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="ta-l">캠페인</th>
+          <th>광고비</th><th>설치</th><th>SKAN</th><th>CPI</th>
+          <th>첫구매</th><th>첫구매율</th>
+          <th>총구매</th><th>도메스틱율</th><th>CPP</th><th>CAC</th>
+          <th>D7 LTV</th><th>Ret롤링</th><th>총수익</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="camp-name">LV1_UAC_남성 <span class="ctag tag-chg">이름변경</span></div></td>
+          <td>1,617,320</td><td>322</td><td>720</td><td>₩5,023</td>
+          <td>34</td>
+          <td><div class="fo-bar-wrap"><span>46.6%</span><div class="fo-bar" style="width:65px;background:#4DA3FF;opacity:.7"></div></div></td>
+          <td>73</td><td>34.2%</td><td>₩22,155</td><td>₩101,083</td>
+          <td>₩53,084</td><td style="color:#3DDC84">17.96%</td><td>530,840</td>
+        </tr>
+        <tr>
+          <td><div class="camp-name">앱설치 (240416) <span class="ctag tag-chg" style="background:rgba(255,83,83,.12);color:#FF5353;border-color:rgba(255,83,83,.3);">도메스틱↓</span></div></td>
+          <td>508,479</td><td>212</td><td>647</td><td>₩2,398</td>
+          <td>23</td>
+          <td><div class="fo-bar-wrap"><span>34.8%</span><div class="fo-bar" style="width:49px;background:#3DDC84;opacity:.7"></div></div></td>
+          <td>66</td><td style="color:#FF8080">19.7%</td><td style="color:#3DDC84">₩7,704</td><td style="color:#3DDC84">₩50,848</td>
+          <td style="color:#FF8080">₩48,635</td><td>12.55%</td><td>194,540</td>
+        </tr>
+        <tr class="total-row">
+          <td>Total</td>
+          <td>2,125,799</td><td>534</td><td>1,367</td><td>₩3,981</td>
+          <td>57</td><td>41.0%</td>
+          <td>139</td><td>27.3%</td><td>₩15,294</td><td>₩81,762</td>
+          <td>₩51,813</td><td>13.86%</td><td>725,380</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WoW -->
+  <div class="slabel"><h2>전주 대비 변화</h2><div class="line"></div><span class="badge badge-warn">260330-0405 → 260406-0412</span></div>
+  <div class="wow-grid">
+    <div class="wow-item">
+      <div class="wow-camp-name">🍎 앱설치 (240416) · 예산 23.9% <span style="color:#3DDC84;font-size:10px;">▼-82%</span></div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cu">-82%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cu">-8%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cu">-61%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cu">-50%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cd">40.4%→34.8%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cd">-43%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cd">-0.87%p</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cd">LTV·DOM급락⚠️</div></div>
+      </div>
+    </div>
+    <div class="wow-item">
+      <div class="wow-camp-name">🍎 LV1_UAC_남성 · 예산 76.1% <span style="color:#3DDC84;font-size:10px;">▼-53%</span></div>
+      <div class="wow-metrics">
+        <div class="wow-metric"><div class="wow-metric-label">비용</div><div class="wow-metric-val cu">-53%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPI</div><div class="wow-metric-val cu">-42%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CPP</div><div class="wow-metric-val cu">-51%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">CAC</div><div class="wow-metric-val cu">-47%</div></div>
+      </div>
+      <div class="wow-metrics" style="margin-top:7px;">
+        <div class="wow-metric"><div class="wow-metric-label">첫구매율</div><div class="wow-metric-val cu">42.1%→46.6%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">D7 LTV</div><div class="wow-metric-val cd">-32%</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">Ret롤링</div><div class="wow-metric-val cu">+3.54%p</div></div>
+        <div class="wow-metric"><div class="wow-metric-label">판정</div><div class="wow-metric-val cu">비용↓ Ret↑</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end iOS -->
+
+
+<!-- ═══════════════════════════════════════════
+     COMPARE SECTION
+═══════════════════════════════════════════ -->
+<div class="section" id="sec-all">
+
+  <div class="slabel"><h2>AOS vs iOS 핵심 지표 비교</h2><div class="line"></div><span class="badge">이번 주 기준</span></div>
+  <div class="cmp-grid">
+    <div class="cmp-card">
+      <div class="cmp-metric">총 광고비</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">₩49.8M</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue">₩2.1M</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">CPI</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">₩4,118</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue" style="color:#3DDC84">₩3,981</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">첫구매율 (신규기여)</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">33.1%</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue" style="color:#4DA3FF">41.0%</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">CPP (구매당 비용)</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">₩21,978</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue" style="color:#3DDC84">₩15,294</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">CAC (공식)</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">₩105,868</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue" style="color:#3DDC84">₩81,762</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">D7 LTV</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue" style="color:#3DDC84">₩64,081</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue">₩51,813</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">Ret D7 롤링</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">13.19%</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue" style="color:#4DA3FF">13.86%</div></div>
+      </div>
+    </div>
+    <div class="cmp-card">
+      <div class="cmp-metric">구매 유저 (PU)</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue">276명</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue">14명</div></div>
+      </div>
+    </div>
+    <div class="cmp-card" style="border: 1px solid rgba(245,166,35,.3);">
+      <div class="cmp-metric" style="color:#F5A623;">도메스틱 구매율 (공식 브랜드)</div>
+      <div class="cmp-platforms">
+        <div class="cmp-pval"><div class="cmp-plabel aos">AOS</div><div class="cmp-pvalue" style="color:#7A9BBF">34.3%</div><div style="font-size:9px;color:#4D6A88;margin-top:2px;">+0.5%p 전주</div></div>
+        <div class="cmp-divider"></div>
+        <div class="cmp-pval"><div class="cmp-plabel ios">iOS</div><div class="cmp-pvalue" style="color:#FF8080">27.3%</div><div style="font-size:9px;color:#4D6A88;margin-top:2px;">전주 35.6% ↓</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WoW trend table -->
+  <div class="slabel"><h2>전주 대비 변화 추이</h2><div class="line"></div></div>
+  <div class="table-wrap">
+    <div class="table-title"><span style="font-size:11px;color:#F5A623;">⚖️</span> &nbsp;플랫폼별 전주 대비 지표 변화</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="ta-l">지표</th>
+          <th>AOS 이전</th><th>AOS 이번</th><th>AOS 변화</th>
+          <th>iOS 이전</th><th>iOS 이번</th><th>iOS 변화</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>광고비</td><td>₩44,667,171</td><td>₩49,758,109</td><td class="cd">+11%</td><td>₩6,317,463</td><td>₩2,125,799</td><td class="cu">-66%</td></tr>
+        <tr><td>CPI</td><td>₩3,650</td><td>₩4,118</td><td class="cd">+13%</td><td>₩4,200</td><td>₩3,981</td><td class="cu">-5%</td></tr>
+        <tr><td>첫구매율</td><td>31.7%</td><td>33.1%</td><td class="cu">+1.4%p</td><td>41.0%</td><td>41.0%</td><td class="cn">0%p</td></tr>
+        <tr><td>CPP</td><td>₩19,994</td><td>₩21,978</td><td class="cd">+10%</td><td>₩28,457</td><td>₩15,294</td><td class="cu">-46%</td></tr>
+        <tr><td>CAC</td><td>₩93,057</td><td>₩105,868</td><td class="cd">+14%</td><td>₩137,336</td><td>₩81,762</td><td class="cu">-40%</td></tr>
+        <tr><td>D7 LTV</td><td>₩66,098</td><td>₩64,081</td><td class="cd">-3%</td><td>₩81,686</td><td>₩51,813</td><td class="cd">-37%</td></tr>
+        <tr><td>Ret D7 클래식</td><td>5.43%</td><td>5.72%</td><td class="cu">+0.29%p</td><td>5.80%</td><td>5.88%</td><td class="cu">+0.08%p</td></tr>
+        <tr class="total-row"><td>Ret D7 롤링</td><td>13.11%</td><td>13.19%</td><td class="cn">+0.08%p</td><td>13.92%</td><td>13.86%</td><td class="cn">-0.06%p</td></tr>
+        <tr><td>도메스틱 구매율 <span style="font-size:9px;color:#4D6A88">(공식 브랜드 구매 비중)</span></td><td>33.8%</td><td>34.3%</td><td class="cu">+0.5%p ↑</td><td>35.6%</td><td>27.3%</td><td class="cd">-8.3%p ↓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="slabel"><h2>종합 시사점</h2><div class="line"></div></div>
+  <div class="summary-card">
+    <h3>📋 260407-0413 / 260406-0412 종합 평가</h3>
+    <div class="summary-grid">
+      <div>
+        <div class="summary-item">
+          <div class="summary-num">1</div>
+          <div class="summary-text"><strong>AOS CAC 3주 연속 +23% 누적:</strong> ₩85,738 → ₩93,057 → ₩105,868. 예산 확대 속도를 품질이 못 따라오고 있음. 예산 확대 우선순위 재검토 시점</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-num">2</div>
+          <div class="summary-text"><strong>LV1_남성 대규모 확대 교훈:</strong> +120% 예산에 LTV -16%, 도메스틱율 -4.6%p. 최적 예산 구간(추정 ₩10-13M)이 있을 것. iOS 앱설치도 동일 패턴</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-num">3</div>
+          <div class="summary-text"><strong>iOS 과도 축소의 역효과:</strong> -66% 삭감에 LTV -37%, 도메스틱율 -8.3%p. 예산에는 최솟값 임계점이 있음. ₩4M 수준으로 복원 제안</div>
+        </div>
+      </div>
+      <div>
+        <div class="summary-item">
+          <div class="summary-num">4</div>
+          <div class="summary-text"><strong>LV1_여성 예산 부족 징후:</strong> 예산 동일(-0.65%)에도 LTV +20%, CAC -14%, 도메스틱율 +4.1%p. 현재 ₩3.6M이 성장 제약하고 있을 가능성 높음</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-num">5</div>
+          <div class="summary-text"><strong>프로모션 2주차 LTV 폭등(₩42,225→₩85,775):</strong> 새 캠페인 초기 1-2주 LTV는 과소 평가됨. 조기 판단 금지. 3주차 확인 후 증액 결정</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-num">6</div>
+          <div class="summary-text"><strong>우선순위:</strong> ① LV1_남성 ₩12-13M 조정 + LV1_여성 ₩6M 증액 실험 → ② iOS ₩4M 복원 → ③ 구매전환(251024) 소재 교체 → ④ 앱설치(250410) 첫구매율 원인 분석</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trend chart -->
+  <div class="slabel"><h2>주간 트렌드</h2><div class="line"></div></div>
+  <div class="charts-row">
+    <div class="chart-box">
+      <h3>AOS 주간 KPI 트렌드</h3>
+      <p class="sub">3주 비교: CAC · D7 LTV · Ret 롤링</p>
+      <div class="chart-wrap h220"><canvas id="aosTrendChart"></canvas></div>
+    </div>
+    <div class="chart-box">
+      <h3>iOS 주간 KPI 트렌드</h3>
+      <p class="sub">3주 비교: CAC · D7 LTV · Ret 롤링</p>
+      <div class="chart-wrap h220"><canvas id="iosTrendChart"></canvas></div>
+    </div>
+  </div>
+
+</div><!-- end compare -->
+</div><!-- main -->
+
+<div class="footer">Google Ads 캠페인 성과 분석 · UA 퍼포먼스 팀 · 2026.04.14</div>
+
+<script>
+Chart.register(ChartDataLabels);
+
+// ── Color palette
+const C = {
+  aos1: '#4DA3FF', aos2: '#3DDC84', aos3: '#F5A623',
+  aos4: '#FF85A1', aos5: '#B06BFF',
+  ios1: '#4DA3FF', ios2: '#3DDC84',
+  gridLine: 'rgba(30,58,95,0.6)',
+  tick: '#4D6A88',
+};
+
+const baseFont = { family: "-apple-system, 'Apple SD Gothic Neo', sans-serif" };
+
+function defaultOpts(extra = {}) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#A8BCCF', font: { ...baseFont, size: 11 }, boxWidth: 12, padding: 14 } }, tooltip: { backgroundColor: '#1A2D42', titleColor: '#CDD9E5', bodyColor: '#A8BCCF', borderColor: '#1E3A5F', borderWidth: 1 } },
+    ...extra
+  };
+}
+
+// ─────────────────────────────────────────
+// AOS BUDGET DONUT
+// ─────────────────────────────────────────
+new Chart(document.getElementById('aosBudgetChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['구매전환(251024)', 'LV1_UAC_남성', '앱설치(250410)', 'LV1_UAC_여성', '프로모션'],
+    datasets: [{ data: [22293369, 18019212, 4091435, 3599132, 1754960], backgroundColor: [C.aos1, C.aos2, C.aos3, C.aos4, C.aos5], borderWidth: 2, borderColor: '#141F2E', hoverOffset: 6 }]
+  },
+  options: {
+    ...defaultOpts(),
+    cutout: '62%',
+    plugins: {
+      legend: { position: 'right', labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10, padding: 8 } },
+      datalabels: { color: '#fff', font: { size: 10, weight: 'bold' }, formatter: (v, ctx) => { const total = ctx.dataset.data.reduce((a,b)=>a+b,0); const pct = (v/total*100).toFixed(1); return pct > 4 ? pct+'%' : ''; } },
+      tooltip: { callbacks: { label: (ctx) => { const v = ctx.parsed; const total = ctx.dataset.data.reduce((a,b)=>a+b,0); return ` ${ctx.label}: ₩${v.toLocaleString()} (${(v/total*100).toFixed(1)}%)`; } } }
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// AOS FIRST ORDER BAR
+// ─────────────────────────────────────────
+new Chart(document.getElementById('aosFirstOrderChart'), {
+  type: 'bar',
+  data: {
+    labels: ['구매전환\n(251024)', 'LV1_UAC\n남성', '앱설치\n(250410)', 'LV1_UAC\n여성', '프로모션'],
+    datasets: [
+      { label: '첫구매율 (%)', data: [29.9, 38.0, 17.6, 40.3, 39.0], backgroundColor: [C.aos1+'CC', C.aos2+'CC', C.aos3+'CC', C.aos4+'CC', C.aos5+'CC'], borderRadius: 4, yAxisID: 'y' },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    indexAxis: 'y',
+    scales: {
+      x: { grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => v+'%' }, max: 55 },
+      y: { grid: { display: false }, ticks: { color: '#A8BCCF', font: { ...baseFont, size: 10 } } }
+    },
+    plugins: {
+      legend: { display: false },
+      datalabels: { anchor: 'end', align: 'end', color: '#CDD9E5', font: { size: 10, weight: 'bold' }, formatter: v => v+'%' },
+      tooltip: { callbacks: { afterBody: (items) => { const camp = ['351건', '383건', '31건', '56건', '34건']; return '첫구매 수: ' + camp[items[0].dataIndex]; } } },
+      annotation: { annotations: { avg: { type: 'line', xMin: 33.1, xMax: 33.1, borderColor: '#7A9BBF', borderWidth: 1, borderDash: [4,3], label: { content: '평균 33.1%', display: true, color: '#7A9BBF', font: { size: 9 }, position: 'start' } } } }
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// AOS MATRIX (BUBBLE / SCATTER)
+// ─────────────────────────────────────────
+new Chart(document.getElementById('aosMatrixChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label: '구매전환(251024)', data: [{ x: 29.9, y: 62424, r: 22 }], backgroundColor: C.aos1+'99', borderColor: C.aos1, borderWidth: 1.5 },
+      { label: 'LV1_UAC_남성',    data: [{ x: 38.0, y: 62931, r: 20 }], backgroundColor: C.aos2+'99', borderColor: C.aos2, borderWidth: 1.5 },
+      { label: '앱설치(250410)',   data: [{ x: 17.6, y: 54388, r: 9  }], backgroundColor: C.aos3+'99', borderColor: C.aos3, borderWidth: 1.5 },
+      { label: 'LV1_UAC_여성',    data: [{ x: 40.3, y: 71538, r: 9  }], backgroundColor: C.aos4+'99', borderColor: C.aos4, borderWidth: 1.5 },
+      { label: '프로모션(2주차)',   data: [{ x: 39.0, y: 85775, r: 6  }], backgroundColor: C.aos5+'99', borderColor: C.aos5, borderWidth: 1.5 },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    scales: {
+      x: { title: { display: true, text: '첫구매율 (신규 유저 기여도 %)', color: '#6B8BAA', font: { ...baseFont, size: 10 } }, min: 10, max: 55, grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => v+'%' } },
+      y: { title: { display: true, text: 'D7 LTV (원)', color: '#6B8BAA', font: { ...baseFont, size: 10 } }, min: 40000, max: 100000, grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => '₩'+(v/1000).toFixed(0)+'K' } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10, padding: 10 } },
+      datalabels: { display: false },
+      tooltip: { callbacks: { label: ctx => { const d = ctx.raw; return ` ${ctx.dataset.label}: 첫구매율 ${d.x}%, LTV ₩${d.y.toLocaleString()}`; } } },
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// AOS STRATEGY POSITIONING (첫구매율 × 도메스틱율)
+// ─────────────────────────────────────────
+new Chart(document.getElementById('aosStrategyChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label: '구매전환(251024)', data: [{ x: 29.9, y: 31.2, r: 22 }], backgroundColor: C.aos1+'99', borderColor: C.aos1, borderWidth: 1.5 },
+      { label: 'LV1_UAC_남성',    data: [{ x: 38.0, y: 34.2, r: 20 }], backgroundColor: C.aos2+'99', borderColor: C.aos2, borderWidth: 1.5 },
+      { label: '앱설치(250410)',   data: [{ x: 17.6, y: 35.2, r: 9  }], backgroundColor: C.aos3+'99', borderColor: C.aos3, borderWidth: 1.5 },
+      { label: 'LV1_UAC_여성',    data: [{ x: 40.3, y: 52.4, r: 9  }], backgroundColor: C.aos4+'99', borderColor: C.aos4, borderWidth: 1.5 },
+      { label: '프로모션(2주차)',   data: [{ x: 39.0, y: 44.2, r: 6  }], backgroundColor: C.aos5+'99', borderColor: C.aos5, borderWidth: 1.5 },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    scales: {
+      x: {
+        title: { display: true, text: '첫구매율 — COMPLETE_FIRST_ORDER / 전체 구매 (%)', color: '#6B8BAA', font: { ...baseFont, size: 10 } },
+        min: 10, max: 55, grid: { color: C.gridLine },
+        ticks: { color: C.tick, font: baseFont, callback: v => v+'%' }
+      },
+      y: {
+        title: { display: true, text: '도메스틱율 — COMPLETE_ORDER_DOMESTIC / 전체 구매 (%)', color: '#6B8BAA', font: { ...baseFont, size: 10 } },
+        min: 25, max: 60, grid: { color: C.gridLine },
+        ticks: { color: C.tick, font: baseFont, callback: v => v+'%' }
+      }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10, padding: 10 } },
+      datalabels: { display: false },
+      tooltip: { callbacks: { label: ctx => {
+        const d = ctx.raw;
+        return [
+          ` ${ctx.dataset.label}`,
+          ` 첫구매율(신규기여): ${d.x}%`,
+          ` 도메스틱율(공식브랜드): ${d.y}%`
+        ];
+      }}},
+      annotation: { annotations: {
+        vLine: { type: 'line', xMin: 34, xMax: 34, borderColor: 'rgba(122,155,191,.3)', borderWidth: 1, borderDash: [4,3] },
+        hLine: { type: 'line', yMin: 40, yMax: 40, borderColor: 'rgba(122,155,191,.3)', borderWidth: 1, borderDash: [4,3] },
+        labelGood: { type: 'label', xValue: 47, yValue: 56, content: ['우상단', '전략 최적'], color: 'rgba(61,220,132,.5)', font: { size: 9 } },
+        labelBad:  { type: 'label', xValue: 14, yValue: 27, content: ['좌하단', '전략 역방향'], color: 'rgba(255,83,83,.5)', font: { size: 9 } },
+      }}
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// iOS BUDGET DONUT
+// ─────────────────────────────────────────
+new Chart(document.getElementById('iosBudgetChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['LV1_UAC_남성', '앱설치(240416)'],
+    datasets: [{ data: [1617320, 508479], backgroundColor: [C.ios1, C.ios2], borderWidth: 2, borderColor: '#141F2E', hoverOffset: 6 }]
+  },
+  options: {
+    ...defaultOpts(),
+    cutout: '62%',
+    plugins: {
+      legend: { position: 'right', labels: { color: '#A8BCCF', font: { ...baseFont, size: 11 }, boxWidth: 12, padding: 12 } },
+      datalabels: { color: '#fff', font: { size: 12, weight: 'bold' }, formatter: (v, ctx) => { const total = ctx.dataset.data.reduce((a,b)=>a+b,0); return (v/total*100).toFixed(1)+'%'; } },
+      tooltip: { callbacks: { label: (ctx) => { const v = ctx.parsed; const total = ctx.dataset.data.reduce((a,b)=>a+b,0); return ` ${ctx.label}: ₩${v.toLocaleString()} (${(v/total*100).toFixed(1)}%)`; } } }
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// iOS FIRST ORDER + LTV grouped bar
+// ─────────────────────────────────────────
+new Chart(document.getElementById('iosFirstOrderChart'), {
+  type: 'bar',
+  data: {
+    labels: ['LV1_UAC_남성', '앱설치(240416)', 'Total'],
+    datasets: [
+      { label: '첫구매율 (%)', data: [46.6, 34.8, 41.0], backgroundColor: [C.ios1+'CC', C.ios2+'CC', '#6B8BAA88'], borderRadius: 4, yAxisID: 'y' },
+      { label: 'D7 LTV (만원)', data: [5.31, 4.86, 5.18], backgroundColor: [C.ios1+'44', C.ios2+'44', '#6B8BAA33'], borderRadius: 4, yAxisID: 'y2', type: 'line', borderColor: [C.ios1, C.ios2, '#6B8BAA'], pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, fill: false },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#A8BCCF', font: { ...baseFont, size: 10 } } },
+      y:  { position: 'left',  grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => v+'%' }, max: 60 },
+      y2: { position: 'right', grid: { display: false }, ticks: { color: C.tick, font: baseFont, callback: v => '₩'+v.toFixed(1)+'만' } }
+    },
+    plugins: {
+      legend: { labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10, padding: 10 } },
+      datalabels: { display: false },
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// iOS MATRIX
+// ─────────────────────────────────────────
+new Chart(document.getElementById('iosMatrixChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label: 'LV1_UAC_남성',  data: [{ x: 46.6, y: 53084, r: 12 }], backgroundColor: C.ios1+'99', borderColor: C.ios1, borderWidth: 1.5 },
+      { label: '앱설치(240416)', data: [{ x: 34.8, y: 48635, r: 7  }], backgroundColor: C.ios2+'99', borderColor: C.ios2, borderWidth: 1.5 },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    scales: {
+      x: { title: { display: true, text: '첫구매율 (신규 유저 기여도 %)', color: '#6B8BAA', font: { ...baseFont, size: 10 } }, min: 25, max: 60, grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => v+'%' } },
+      y: { title: { display: true, text: 'D7 LTV (원)', color: '#6B8BAA', font: { ...baseFont, size: 10 } }, min: 35000, max: 70000, grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => '₩'+(v/1000).toFixed(0)+'K' } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10 } },
+      datalabels: { display: false },
+      tooltip: { callbacks: { label: ctx => { const d = ctx.raw; return ` ${ctx.dataset.label}: 첫구매율 ${d.x}%, LTV ₩${d.y.toLocaleString()}`; } } },
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// TREND CHARTS (compare tab)
+// ─────────────────────────────────────────
+const weeks = ['260324-0330', '260331-0406', '260407-0413'];
+new Chart(document.getElementById('aosTrendChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'CAC (만원)', data: [8.57, 9.31, 10.59], borderColor: '#FF5353', backgroundColor: '#FF535322', tension: .3, fill: true, pointRadius: 4, yAxisID: 'y' },
+      { label: 'D7 LTV (만원)', data: [6.53, 6.61, 6.41], borderColor: C.aos2, backgroundColor: C.aos2+'22', tension: .3, fill: true, pointRadius: 4, yAxisID: 'y' },
+      { label: 'Ret 롤링 (%)', data: [19.54, 13.11, 13.19], borderColor: '#4DA3FF', backgroundColor: '#4DA3FF22', tension: .3, fill: false, pointRadius: 4, yAxisID: 'y2', borderDash: [4,3] },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    scales: {
+      x: { grid: { color: C.gridLine }, ticks: { color: C.tick, font: { ...baseFont, size: 9 } } },
+      y:  { grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => '₩'+v+'만' } },
+      y2: { position: 'right', grid: { display: false }, ticks: { color: C.tick, font: baseFont, callback: v => v+'%' } }
+    },
+    plugins: { legend: { labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10, padding: 8 } }, datalabels: { display: false } }
+  }
+});
+
+const iWeeks = ['260323-0329', '260330-0405', '260406-0412'];
+new Chart(document.getElementById('iosTrendChart'), {
+  type: 'line',
+  data: {
+    labels: iWeeks,
+    datasets: [
+      { label: 'CAC (만원)', data: [15.07, 13.74, 8.18], borderColor: '#FF5353', backgroundColor: '#FF535322', tension: .3, fill: true, pointRadius: 4, yAxisID: 'y' },
+      { label: 'D7 LTV (만원)', data: [6.51, 8.17, 5.18], borderColor: C.ios2, backgroundColor: C.ios2+'22', tension: .3, fill: true, pointRadius: 4, yAxisID: 'y' },
+      { label: 'Ret 롤링 (%)', data: [20.97, 13.92, 13.86], borderColor: '#4DA3FF', backgroundColor: '#4DA3FF22', tension: .3, fill: false, pointRadius: 4, yAxisID: 'y2', borderDash: [4,3] },
+    ]
+  },
+  options: {
+    ...defaultOpts(),
+    scales: {
+      x: { grid: { color: C.gridLine }, ticks: { color: C.tick, font: { ...baseFont, size: 9 } } },
+      y:  { grid: { color: C.gridLine }, ticks: { color: C.tick, font: baseFont, callback: v => '₩'+v+'만' } },
+      y2: { position: 'right', grid: { display: false }, ticks: { color: C.tick, font: baseFont, callback: v => v+'%' } }
+    },
+    plugins: { legend: { labels: { color: '#A8BCCF', font: { ...baseFont, size: 10 }, boxWidth: 10, padding: 8 } }, datalabels: { display: false } }
+  }
+});
+
+// ─────────────────────────────────────────
+// TAB SWITCHING
+// ─────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active', 'active-aos'));
+  document.getElementById('sec-' + tab).classList.add('active');
+  const t = document.getElementById('tab-' + tab);
+  t.classList.add('active');
+  if (tab === 'aos') t.classList.add('active-aos');
+}
+</script>
+</body>
+</html>
