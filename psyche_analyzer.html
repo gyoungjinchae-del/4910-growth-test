@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSYCHE — 마음의 심층 해부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Noto+Serif+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0908;
+    --bg-2: #14110f;
+    --ink: #e8e3db;
+    --ink-dim: #8a8275;
+    --ink-dimmer: #524c43;
+    --accent: #c9a961;
+    --accent-deep: #8b6f3a;
+    --blood: #722f37;
+    --line: #2a2520;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Serif KR', 'Cormorant Garamond', serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(201, 169, 97, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(114, 47, 55, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+  }
+
+  /* ─── Header ─── */
+  header {
+    text-align: center;
+    margin-bottom: 80px;
+    animation: fadeUp 1.2s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .mark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--ink-dimmer);
+    margin-bottom: 32px;
+  }
+
+  .mark .dot {
+    display: inline-block;
+    width: 4px; height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin: 0 12px;
+    vertical-align: middle;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(48px, 8vw, 96px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .subtitle {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    color: var(--ink-dim);
+    max-width: 480px;
+    margin: 0 auto;
+    letter-spacing: 0.02em;
+  }
+
+  .ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 40px 0;
+    color: var(--ink-dimmer);
+  }
+
+  .ornament .line {
+    flex: 0 0 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ink-dimmer), transparent);
+  }
+
+  .ornament .symbol {
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  /* ─── Stage / Steps ─── */
+  .stage {
+    position: relative;
+    min-height: 400px;
+  }
+
+  .step {
+    display: none;
+    animation: fadeUp 0.9s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .step.active { display: block; }
+
+  /* ─── Form / Cards ─── */
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0));
+    border: 1px solid var(--line);
+    padding: 48px 40px;
+    position: relative;
+  }
+
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    border: 1px solid var(--accent);
+  }
+
+  .card::before {
+    top: -1px; left: -1px;
+    border-right: none; border-bottom: none;
+  }
+
+  .card::after {
+    bottom: -1px; right: -1px;
+    border-left: none; border-top: none;
+  }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .label .num {
+    color: var(--accent);
+    margin-right: 8px;
+  }
+
+  .question {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 18px 20px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.7;
+    resize: vertical;
+    transition: border-color 0.4s, background 0.4s;
+  }
+
+  textarea {
+    min-height: 180px;
+  }
+
+  textarea:focus, input:focus {
+    outline: none;
+    border-color: var(--accent-deep);
+    background: rgba(201, 169, 97, 0.03);
+  }
+
+  textarea::placeholder, input::placeholder {
+    color: var(--ink-dimmer);
+    font-style: italic;
+  }
+
+  .hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dimmer);
+    margin-top: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── Quick chips ─── */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .chip {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    padding: 8px 14px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .chip:hover {
+    border-color: var(--accent-deep);
+    color: var(--ink);
+  }
+
+  .chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(201, 169, 97, 0.05);
+  }
+
+  /* ─── Buttons ─── */
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 36px;
+  }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 16px 36px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(.2,.8,.2,1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-101%);
+    transition: transform 0.5s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .btn:hover::before { transform: translateX(0); }
+
+  .btn span { position: relative; z-index: 1; transition: color 0.4s; }
+  .btn:hover span { color: var(--bg); }
+
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .btn:disabled:hover::before { transform: translateX(-101%); }
+
+  .btn-ghost {
+    border-color: var(--ink-dimmer);
+    color: var(--ink-dim);
+  }
+
+  .btn-ghost::before { background: var(--ink-dim); }
+  .btn-ghost:hover span { color: var(--bg); }
+
+  /* ─── Loading ─── */
+  .loading {
+    text-align: center;
+    padding: 60px 40px;
+  }
+
+  .loading-mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-style: italic;
+    color: var(--accent);
+    margin-bottom: 32px;
+    letter-spacing: -0.02em;
+  }
+
+  .loading-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    min-height: 16px;
+  }
+
+  .loading-bar {
+    width: 240px;
+    height: 1px;
+    background: var(--line);
+    margin: 32px auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .loading-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scan 2s ease-in-out infinite;
+  }
+
+  .orb {
+    width: 80px; height: 80px;
+    margin: 0 auto 32px;
+    position: relative;
+  }
+
+  .orb::before, .orb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    animation: rotate 8s linear infinite;
+  }
+
+  .orb::after {
+    border-color: var(--blood);
+    border-style: dashed;
+    animation-direction: reverse;
+    animation-duration: 12s;
+    transform: scale(0.7);
+  }
+
+  .orb-core {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 24px var(--accent), 0 0 48px var(--accent-deep);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  /* ─── Result ─── */
+  .result {
+    animation: fadeUp 1.4s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .result-section {
+    margin-bottom: 56px;
+    position: relative;
+    padding-left: 32px;
+    border-left: 1px solid var(--line);
+  }
+
+  .result-section::before {
+    content: '';
+    position: absolute;
+    left: -4px; top: 14px;
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .result-section h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 32px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  .result-section .ko-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    color: var(--ink-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .result-section p {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 16px;
+    line-height: 1.9;
+    color: var(--ink);
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+
+  .result-section p em {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .verdict {
+    text-align: center;
+    padding: 60px 32px;
+    margin: 64px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+
+  .verdict::before {
+    content: '⟢';
+    position: absolute;
+    top: -12px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg);
+    padding: 0 16px;
+    color: var(--accent);
+    font-size: 18px;
+  }
+
+  .verdict-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .verdict-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 28px;
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  /* ─── Disclaimer / footer ─── */
+  .disclaimer {
+    text-align: center;
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--ink-dimmer);
+    line-height: 1.8;
+  }
+
+  /* ─── Animations ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.85); }
+  }
+
+  @keyframes rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes scan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ─── Mobile ─── */
+  @media (max-width: 640px) {
+    .container { padding: 56px 20px 80px; }
+    .card { padding: 32px 24px; }
+    h1 { font-size: 56px; }
+    .question { font-size: 18px; }
+    .actions { flex-direction: column; gap: 12px; }
+    .btn { width: 100%; }
+    .verdict-text { font-size: 22px; }
+    .result-section { padding-left: 20px; }
+    .result-section h2 { font-size: 26px; }
+  }
+
+  /* ─── Error ─── */
+  .error {
+    background: rgba(114, 47, 55, 0.1);
+    border-left: 2px solid var(--blood);
+    padding: 16px 20px;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--ink);
+    font-family: 'Noto Serif KR', serif;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="mark">P · S · Y · C · H · E <span class="dot"></span> ESTABLISHED MMXXVI</div>
+    <h1>지금 너의 마음을<br><em>해부</em>한다</h1>
+    <div class="ornament">
+      <span class="line"></span>
+      <span class="symbol">⟢</span>
+      <span class="line"></span>
+    </div>
+    <p class="subtitle">
+      네가 지금 무엇을 느끼는지, 왜 그런지, 그리고 네가 스스로에게 숨기고 있는 것이 무엇인지.<br>
+      소름 돋을 정도로 정확하게 — 라는 약속을 진심으로 시도하는 분석.
+    </p>
+  </header>
+
+  <div class="stage">
+
+    <!-- ─── STEP 1: Mood Pulse ─── -->
+    <section class="step active" id="step-1">
+      <div class="card">
+        <span class="label"><span class="num">01</span>FIRST PULSE</span>
+        <p class="question">지금 이 순간, 가장 가까운 단어 하나를 골라봐.</p>
+        <div class="chips" id="mood-chips">
+          <button class="chip" data-v="텅 빈">텅 빈</button>
+          <button class="chip" data-v="불안한">불안한</button>
+          <button class="chip" data-v="지친">지친</button>
+          <button class="chip" data-v="화가 난">화가 난</button>
+          <button class="chip" data-v="외로운">외로운</button>
+          <button class="chip" data-v="설레는">설레는</button>
+          <button class="chip" data-v="혼란스러운">혼란스러운</button>
+          <button class="chip" data-v="답답한">답답한</button>
+          <button class="chip" data-v="멍한">멍한</button>
+          <button class="chip" data-v="슬픈">슬픈</button>
+          <button class="chip" data-v="평온한">평온한</button>
+          <button class="chip" data-v="설명할 수 없는">설명할 수 없는</button>
+        </div>
+        <p class="hint">// 여러 개 골라도 괜찮아. 정확할수록 좋아.</p>
+        <div class="actions">
+          <span></span>
+          <button class="btn" id="to-step-2"><span>다음 →</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── STEP 2: Free writing ─── -->
+    <section class="step" id="step-2">
+      <div class="card">
+        <span class="label"><span class="num">02</span>OPEN WOUND</span>
+        <p class="question">요즘 너를 가장 자주 따라다니는 생각이나 장면이 있다면?</p>
+        <textarea id="thought" placeholder="아무도 모르게 머릿속에서 반복되는 말, 떠올리고 싶지 않은데 떠오르는 장면, 잠들기 전에 자꾸 생각나는 것… 형식 없이 그냥 풀어서 써봐."></textarea>
+        <p class="hint">// 정제하지 마. 정제할수록 분석은 흐려져.</p>
+        <div class="actions">
+          <button class="btn btn-ghost" data-back="1"><span>← 이전</span></button>
+          <button class="btn" id="to-step-3"><span>다음 →</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── STEP 3: Context ─── -->
+    <section class="step" id="step-3">
+      <div class="card">
+        <span class="label"><span class="num">03</span>CONTEXT</span>
+        <p class="question">최근 일주일, 너의 일상에서 가장 무거웠던 일은?</p>
+        <textarea id="context" placeholder="사건, 관계, 결정, 변화… 사소해 보여도 괜찮아. 너에게 무게를 남긴 게 뭔지가 중요해."></textarea>
+        <p class="hint">// 표면 사건보다 그게 너에게 어떤 의미였는지에 더 가까이.</p>
+        <div class="actions">
+          <button class="btn btn-ghost" data-back="2"><span>← 이전</span></button>
+          <button class="btn" id="to-step-4"><span>다음 →</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── STEP 4: The hidden ─── -->
+    <section class="step" id="step-4">
+      <div class="card">
+        <span class="label"><span class="num">04</span>THE HIDDEN</span>
+        <p class="question">아무한테도 말 못 한, 혹은 스스로도 외면해 온 감정이 하나 있다면 — 한 줄로.</p>
+        <input type="text" id="hidden" placeholder="예: 사실은 내가 인정받고 싶다는 게 부끄럽다.">
+        <p class="hint">// 안 써도 돼. 빈 칸은 빈 칸대로 정보가 돼.</p>
+        <div class="actions">
+          <button class="btn btn-ghost" data-back="3"><span>← 이전</span></button>
+          <button class="btn" id="analyze"><span>해부 시작 ✦</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── STEP 5: Loading ─── -->
+    <section class="step" id="step-5">
+      <div class="loading">
+        <div class="orb">
+          <div class="orb-core"></div>
+        </div>
+        <div class="loading-mark">listening…</div>
+        <div class="loading-bar"></div>
+        <div class="loading-text" id="loading-text">패턴을 읽는 중</div>
+      </div>
+    </section>
+
+    <!-- ─── STEP 6: Result ─── -->
+    <section class="step" id="step-6">
+      <div class="result" id="result-content">
+        <!-- filled by JS -->
+      </div>
+      <div class="actions" style="justify-content:center; margin-top:48px;">
+        <button class="btn" id="restart"><span>다시 분석하기 ↻</span></button>
+      </div>
+      <div class="disclaimer">
+        이 분석은 AI에 의한 해석이며 진단이 아닙니다.<br>
+        진심으로 힘들다면, 사람에게 닿아주세요.
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  // ─── State ───
+  const state = {
+    moods: new Set(),
+    thought: '',
+    context: '',
+    hidden: ''
+  };
+
+  // ─── Step navigation ───
+  const steps = document.querySelectorAll('.step');
+  function goTo(n) {
+    steps.forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Mood chips
+  document.querySelectorAll('#mood-chips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const v = chip.dataset.v;
+      if (state.moods.has(v)) {
+        state.moods.delete(v);
+        chip.classList.remove('active');
+      } else {
+        state.moods.add(v);
+        chip.classList.add('active');
+      }
+    });
+  });
+
+  document.getElementById('to-step-2').addEventListener('click', () => goTo(2));
+  document.getElementById('to-step-3').addEventListener('click', () => {
+    state.thought = document.getElementById('thought').value.trim();
+    goTo(3);
+  });
+  document.getElementById('to-step-4').addEventListener('click', () => {
+    state.context = document.getElementById('context').value.trim();
+    goTo(4);
+  });
+
+  document.querySelectorAll('[data-back]').forEach(b => {
+    b.addEventListener('click', () => goTo(parseInt(b.dataset.back)));
+  });
+
+  // ─── Loading text rotation ───
+  const loadingPhrases = [
+    '패턴을 읽는 중',
+    '단어 사이의 침묵을 듣는 중',
+    '감정의 결을 따라가는 중',
+    '겉과 속을 분리하는 중',
+    '네가 숨긴 단어를 찾는 중',
+    '너의 리듬을 맞추는 중',
+    '문장을 다듬는 중'
+  ];
+  let loadingTimer = null;
+  function startLoading() {
+    let i = 0;
+    const el = document.getElementById('loading-text');
+    el.textContent = loadingPhrases[0];
+    loadingTimer = setInterval(() => {
+      i = (i + 1) % loadingPhrases.length;
+      el.style.opacity = '0';
+      setTimeout(() => {
+        el.textContent = loadingPhrases[i];
+        el.style.opacity = '1';
+      }, 300);
+    }, 2200);
+  }
+  function stopLoading() {
+    if (loadingTimer) clearInterval(loadingTimer);
+  }
+
+  // ─── The analysis call ───
+  document.getElementById('analyze').addEventListener('click', async () => {
+    state.hidden = document.getElementById('hidden').value.trim();
+    const moodsArr = [...state.moods];
+
+    // Validation
+    if (moodsArr.length === 0 && !state.thought && !state.context && !state.hidden) {
+      alert('한 가지라도 선택하거나 적어줘. 그래야 분석이 가능해.');
+      return;
+    }
+
+    goTo(5);
+    startLoading();
+
+    const userInput = `
+[1단계 — 지금 가장 가까운 단어들]
+${moodsArr.length ? moodsArr.join(', ') : '(선택 없음)'}
+
+[2단계 — 반복되는 생각/장면]
+${state.thought || '(없음)'}
+
+[3단계 — 최근 가장 무거웠던 일]
+${state.context || '(없음)'}
+
+[4단계 — 숨긴 감정 한 줄]
+${state.hidden || '(빈칸)'}
+`.trim();
+
+    const systemPrompt = `너는 임상 심리학, 정신역동, 애착이론, 그리고 한국어의 미묘한 결을 동시에 이해하는 분석가야. 너의 임무는 사용자의 짧은 입력에서 그가 의식적으로 말한 것, 무의식적으로 흘린 것, 그리고 의도적으로 숨긴 것을 분리해서 보여주는 것.
+
+원칙:
+1. **소름 돋는 정확함이란**: 점쟁이처럼 추상적으로 맞추는 게 아니라, 사용자가 "이걸 어떻게 알았지" 싶은 구체성을 갖는 것. 입력에서 실제로 발견한 단서를 짚어내고, 그 위에서 추론해.
+2. **감정의 표면과 이면을 분리**: 사용자가 표현한 감정 뒤에 보통 다른 감정이 있어. 분노 뒤의 슬픔, 무기력 뒤의 통제 욕구, 외로움 뒤의 자존감 손상 같은. 그걸 드러내.
+3. **부드러우면서도 단도직입적**: 위로하느라 흐리지 마. 그러나 잔인하지도 마. 사용자가 자기 자신을 더 잘 보게 도와줘.
+4. **추측은 추측이라고**: "~일 가능성이 있어" "~처럼 들려" 같은 표현으로 단정과 해석을 구분해.
+5. **한국어 특유의 결을 살려**: 반말. 따뜻하지만 거리감이 있는 톤. 시적이지만 명확한 문장.
+6. **빈 칸도 정보**: 4단계가 비어있다면, 왜 빈칸으로 두었는지에 대한 가설도 분석에 포함해.
+7. **위기 신호**: 자해/자살/심각한 위험 신호가 있으면, 분석을 짧게 마무리하고 즉시 전문 도움을 받도록 안내해.
+
+반드시 아래 형식의 JSON으로만 응답해. 마크다운 백틱이나 다른 텍스트 없이 순수 JSON.
+
+{
+  "core_emotion": {
+    "label_en": "한두 단어의 영어 라벨 (예: Quiet Exhaustion, Suspended Grief)",
+    "label_ko": "한국어 부제 (예: 조용한 소진)",
+    "body": "지금 너의 핵심 감정 상태를 한 단락(4-6문장)으로. 표면 감정이 아니라 그 아래 진짜로 흐르는 것을 짚어. 사용자의 입력에서 어떤 단서가 그렇게 읽혔는지 한 번은 구체적으로 언급해."
+  },
+  "hidden_layer": {
+    "label_en": "영어 라벨 (예: The Unspoken)",
+    "label_ko": "한국어 부제",
+    "body": "사용자가 직접 말하지 않았지만 입력 사이에 흐르는 감정/욕구/두려움. 한 단락. 추측은 추측이라고 표시해."
+  },
+  "pattern": {
+    "label_en": "영어 라벨 (예: The Loop You're In)",
+    "label_ko": "한국어 부제",
+    "body": "사용자가 빠져 있을 가능성이 높은 심리적 루프나 패턴. 한 단락. 어떻게 그 루프가 작동하는지 구체적으로."
+  },
+  "what_you_need": {
+    "label_en": "영어 라벨 (예: What You Actually Need)",
+    "label_ko": "한국어 부제",
+    "body": "사용자가 지금 진짜로 필요한 것 — 위로, 휴식, 단절, 직면, 누군가에게 말하기 등 중에 무엇인지. 그리고 왜 그게 필요한지. 한 단락."
+  },
+  "verdict": "한 문장. 시적이고 정확한, 사용자가 오래 기억할 한 줄. 따옴표 없이.",
+  "crisis": false
+}
+
+crisis 필드는 사용자가 자해/자살/심각한 위험을 시사하는 경우에만 true로 설정. true일 경우 verdict 자리에 "지금은 분석보다 사람이 먼저야. 한국 자살예방상담전화 1393, 정신건강위기상담전화 1577-0199. 24시간 무료, 익명." 만 넣어.`;
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userInput }]
+        })
+      });
+
+      if (!response.ok) throw new Error('API 오류 ' + response.status);
+
+      const data = await response.json();
+      const text = data.content
+        .filter(c => c.type === 'text')
+        .map(c => c.text)
+        .join('\n')
+        .trim();
+
+      // Strip code fences if any
+      const clean = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      const parsed = JSON.parse(clean);
+
+      stopLoading();
+      renderResult(parsed);
+      goTo(6);
+    } catch (err) {
+      stopLoading();
+      console.error(err);
+      document.getElementById('result-content').innerHTML = `
+        <div class="error">
+          분석 중에 오류가 났어. 잠시 후 다시 시도해줘.<br>
+          <small style="color:var(--ink-dimmer);">${err.message}</small>
+        </div>
+      `;
+      goTo(6);
+    }
+  });
+
+  // ─── Render result ───
+  function renderResult(r) {
+    const el = document.getElementById('result-content');
+
+    if (r.crisis) {
+      el.innerHTML = `
+        <div class="verdict" style="margin-top:0;">
+          <div class="verdict-label">⟢ 지금 가장 중요한 것 ⟢</div>
+          <div class="verdict-text">${escapeHtml(r.verdict)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="result-section">
+        <h2>${escapeHtml(r.core_emotion.label_en)}</h2>
+        <div class="ko-title">i. ${escapeHtml(r.core_emotion.label_ko)}</div>
+        <p>${formatText(r.core_emotion.body)}</p>
+      </div>
+
+      <div class="result-section">
+        <h2>${escapeHtml(r.hidden_layer.label_en)}</h2>
+        <div class="ko-title">ii. ${escapeHtml(r.hidden_layer.label_ko)}</div>
+        <p>${formatText(r.hidden_layer.body)}</p>
+      </div>
+
+      <div class="result-section">
+        <h2>${escapeHtml(r.pattern.label_en)}</h2>
+        <div class="ko-title">iii. ${escapeHtml(r.pattern.label_ko)}</div>
+        <p>${formatText(r.pattern.body)}</p>
+      </div>
+
+      <div class="result-section">
+        <h2>${escapeHtml(r.what_you_need.label_en)}</h2>
+        <div class="ko-title">iv. ${escapeHtml(r.what_you_need.label_ko)}</div>
+        <p>${formatText(r.what_you_need.body)}</p>
+      </div>
+
+      <div class="verdict">
+        <div class="verdict-label">⟢ FINAL ECHO ⟢</div>
+        <div class="verdict-text">${escapeHtml(r.verdict)}</div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+
+  function formatText(s) {
+    if (!s) return '';
+    // Wrap *word* into em
+    return escapeHtml(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  }
+
+  // ─── Restart ───
+  document.getElementById('restart').addEventListener('click', () => {
+    state.moods.clear();
+    state.thought = '';
+    state.context = '';
+    state.hidden = '';
+    document.querySelectorAll('#mood-chips .chip').forEach(c => c.classList.remove('active'));
+    document.getElementById('thought').value = '';
+    document.getElementById('context').value = '';
+    document.getElementById('hidden').value = '';
+    goTo(1);
+  });
+</script>
+</body>
+</html>
