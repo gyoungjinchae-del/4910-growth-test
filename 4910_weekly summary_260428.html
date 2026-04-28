@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4910 마케팅 주요지표 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:      #0d1117; --surface: #161b22; --surface2: #1e2530; --border: #30363d;
+    --text:    #e6edf3; --muted:   #8b949e;
+    --blue:    #58a6ff; --orange:  #ff7b54; --green:   #3fb950;
+    --teal:    #39d0d8; --purple:  #bc8cff; --red:     #f85149;
+    --yellow:  #d29922; --pink:    #ff6eb3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background: var(--bg); color: var(--text); font-size: 15px; }
+
+  .header {
+    background: linear-gradient(135deg,#0d1117 0%,#1a2236 50%,#0d1117 100%);
+    border-bottom: 1px solid var(--border); padding: 20px 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { background: linear-gradient(135deg,var(--blue),var(--purple)); border-radius: 9px; padding: 6px 12px; font-weight: 800; font-size: 17px; letter-spacing: 1px; }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header-meta { font-size: 13px; color: var(--muted); margin-top: 1px; }
+  .badge-date { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 11px; font-size: 13px; color: var(--muted); }
+
+  .tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 36px; display: flex; }
+  .tab { padding: 12px 18px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  .main { padding: 24px 36px; max-width: 1640px; margin: 0 auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── 인사이트 배너 ── */
+  .insight-banner { display: grid; gap: 10px; margin-bottom: 22px; }
+  .insight-banner.cols-3 { grid-template-columns: repeat(3,1fr); }
+  .insight-banner.cols-2 { grid-template-columns: repeat(2,1fr); }
+  @media(max-width:1100px){ .insight-banner.cols-3 { grid-template-columns: 1fr 1fr; } }
+  @media(max-width:700px) { .insight-banner.cols-3,.insight-banner.cols-2 { grid-template-columns: 1fr; } }
+
+  .insight-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 4px solid var(--ac); border-radius: 10px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 9px;
+    transition: transform .15s;
+  }
+  .insight-item:hover { transform: translateY(-1px); }
+  .insight-full { grid-column: 1 / -1; }
+  .insight-full .insight-body { columns: 2; gap: 20px; }
+  @media(max-width:800px){ .insight-full .insight-body { columns: 1; } }
+
+  .ih { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+  .itag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+          background: color-mix(in srgb, var(--ac) 18%, transparent); color: var(--ac); white-space: nowrap; }
+  .ititle { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.35; }
+  .isum  { font-size: 13px; font-weight: 600; color: var(--ac); }
+  .ibody { font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .ibody li { margin-left: 14px; margin-bottom: 3px; }
+  .ibody li:last-child { margin-bottom: 0; }
+  .iaction { margin-top: 2px; background: rgba(210,153,34,.1); border: 1px solid rgba(210,153,34,.25); border-radius: 6px; padding: 7px 11px; font-size: 13px; color: #e0c060; line-height: 1.6; }
+  .iaction strong { color: #f0d070; }
+
+  /* ── KPI 2Q 진척도 ── */
+  .kpi2q-grid { display: grid; grid-template-columns: 2fr repeat(5,1fr); gap: 10px; margin-bottom: 22px; }
+  @media(max-width:1200px){ .kpi2q-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  @media(max-width:700px) { .kpi2q-grid { grid-template-columns: 1fr; } }
+
+  .kpi2q-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .kpi2q-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:var(--ac); }
+  .kpi2q-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .kpi2q-target { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .kpi2q-target span { color: var(--text); font-weight: 600; }
+  .kpi2q-pace { font-size: 15px; font-weight: 700; color: var(--ac); margin-bottom: 8px; }
+  .kpi2q-bar-wrap { height: 6px; background: var(--surface2); border-radius: 3px; margin-bottom: 6px; overflow: hidden; }
+  .kpi2q-bar { height: 100%; border-radius: 3px; background: var(--ac); transition: width .5s; }
+  .kpi2q-pct { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; }
+  .main-kpi .kpi2q-pace { font-size: 23px; }
+
+  /* ── 일반 KPI 카드 ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 22px; }
+  @media(max-width:1000px){ .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden; }
+  .kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:var(--ac); }
+  .kpi-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; line-height: 1.5; }
+  .kpi-value { font-size: 24px; font-weight: 800; color: var(--ac); margin-bottom: 4px; letter-spacing:-.5px; }
+  .kpi-sub   { font-size: 13px; color: var(--muted); }
+  .up   { color: var(--green)  !important; }
+  .down { color: var(--red)    !important; }
+  .good { color: var(--teal)   !important; }
+  .warn { color: var(--yellow) !important; }
+
+  /* ── 섹션 ── */
+  .section-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 7px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .snote { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+  /* ── 차트 그리드 ── */
+  .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  @media(max-width:1100px){ .chart-grid-2,.chart-grid-3 { grid-template-columns: 1fr; } }
+
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .chart-card-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .chart-card-sub   { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+
+  /* ── 수치 테이블 ── */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: auto; margin-bottom: 22px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 800px; }
+  th { background: var(--surface2); color: var(--muted); font-weight: 600; padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child { text-align: left; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+  td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .hi  { color: var(--green)  !important; font-weight: 700; }
+  .lo  { color: var(--teal)   !important; font-weight: 700; }
+  .warn-cell { color: var(--yellow) !important; font-weight: 700; }
+
+  /* ── MoM 카드 ── */
+  .mom-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 22px; }
+  @media(max-width:1000px){ .mom-grid { grid-template-columns: repeat(2,1fr); } }
+  .mom-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .mom-month { font-size: 13px; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
+  .mom-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .mom-row:last-child { border-bottom: none; }
+  .mom-metric { font-size: 13px; color: var(--muted); }
+  .mom-val { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+  .mb { font-size: 11px; padding: 1px 5px; border-radius: 3px; font-weight: 700; }
+  .mb-up   { background: rgba(63,185,80,.15);  color: var(--green); }
+  .mb-down { background: rgba(248,81,73,.15);  color: var(--red); }
+  .mb-good { background: rgba(57,208,216,.15); color: var(--teal); }
+
+  /* ── 성별 비교 ── */
+  .gender-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  @media(max-width:900px){ .gender-grid { grid-template-columns: 1fr; } }
+  .gender-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .gender-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 14px; font-weight: 700; }
+  .gender-badge { padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">4910</div>
+    <div>
+      <h1>마케팅 주요지표 대시보드</h1>
+      <div class="header-meta">2026년 1Q~2Q (W1~W17) · 2Q KPI 달성 현황 포함</div>
+    </div>
+  </div>
+  <div class="badge-date">기준일: 2026-04-28</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('gmv',this)">📊 거래액 & 2Q KPI</div>
+  <div class="tab" onclick="switchTab('ads',this)">🎯 광고 효율 & 신규 고객</div>
+  <div class="tab" onclick="switchTab('user',this)">👥 유저 & 리텐션</div>
+</div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- TAB 1: 거래액 & 2Q KPI                     -->
+<!-- ══════════════════════════════════════════ -->
+<div id="tab-gmv" class="tab-content active">
+
+  <div class="insight-banner cols-3">
+    <div class="insight-item" style="--ac:var(--red)">
+      <div class="ih"><span class="itag">2Q KPI 페이싱 ⚠️</span><span class="ititle">🎯 4/28 기준 2Q pace 366억 — 목표 450억의 81.4%로 추가 악화</span></div>
+      <div class="isum">4월 일평균 ₩402M × 91일 = 예상 366억<br>목표까지 약 84억 부족</div>
+      <ul class="ibody">
+        <li>W17 전체 거래액 ₩320M — W16(₩389M) 대비 -18%, 분기 최저치 갱신</li>
+        <li>공식 브랜드 pace 90억 (목표 120억의 75.3%)<br>병행수입 pace 173억 (목표 200억의 86.6%)</li>
+        <li>4월 전체 pace 81.4% — 5~6월 일평균 ₩498M 이상 유지해야 목표 달성 가능</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 현 pace 유지 시 84억 부족<br>5월부터 공식 브랜드·병행수입 동반 회복 없이는 2Q 목표 달성 불가</div>
+    </div>
+    <div class="insight-item" style="--ac:var(--yellow)">
+      <div class="ih"><span class="itag">공식 브랜드 ⚠️</span><span class="ititle">📉 W16 역대 최고(31%) 후 W17 23%로 급락 — 일시적 조정 여부 확인 필요</span></div>
+      <div class="isum">W16 ₩120M(31%) → W17 ₩73M(23%)<br>1주 만에 -39%, -8%p 급락</div>
+      <ul class="ibody">
+        <li>4월 공식 브랜드 점유율 25% 달성 — 3월(21%) 대비 4%p 개선, 월간 추세는 유지</li>
+        <li>W16 고점 이후 조정인지 추세 전환인지 W18 수치 확인이 핵심</li>
+        <li>4월 공식 브랜드 pace 90억 — 목표 120억의 75.3%로 가장 큰 갭 카테고리</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> W18 공식 브랜드 점유율 25% 미만 시 캠페인 강도 즉시 상향 검토<br>5월 집중 드라이브 계획 선제 수립 권장</div>
+    </div>
+    <div class="insight-item" style="--ac:var(--orange)">
+      <div class="ih"><span class="itag">병행수입 하락세 지속</span><span class="ititle">📉 W17 병행수입 ₩138M — 4주 연속 하락, 분기 최저</span></div>
+      <div class="isum">W14 ₩229M → W15 ₩252M → W16 ₩153M → W17 ₩138M<br>W14 대비 -40%</div>
+      <ul class="ibody">
+        <li>4월 병행수입 일평균 ₩190M — 2Q pace 173억 (목표 200억의 86.6%)</li>
+        <li>전체 거래액에서 병행수입 비중 감소 — 공식 브랜드 점유율 상승과 대조적 흐름</li>
+        <li>설날(W7~W8) 이후 병행수입 구조적 하향 추세 심화 — 카테고리 전략 재검토 필요</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 병행수입 반등 없이 공식 브랜드만으로 GMV 목표 달성은 어려움<br>두 카테고리 동반 드라이브 전략 수립 시급</div>
+    </div>
+  </div>
+
+  <!-- 2Q KPI 진척도 -->
+  <div class="section-title"><span class="dot" style="background:var(--yellow)"></span>2Q KPI 달성 현황 <span class="snote">4월 28일 기준 일평균 pace × 91일 예상 / 목표 대비 달성률</span></div>
+  <div class="kpi2q-grid" id="kpi2q-cards"></div>
+
+  <!-- 카테고리별 주간 GMV -->
+  <div class="section-title"><span class="dot" style="background:var(--blue)"></span>카테고리별 주간 거래액 추이 <span class="snote">일 평균 기준 · W1~W17</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">전체 & 공식 브랜드 거래액</div>
+      <div class="chart-card-sub">일 평균 (₩) · 공식 브랜드 점유율(%) 우축</div>
+      <canvas id="c-gmv-main" height="135"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">카테고리별 거래액 (맨즈웨어 / 병행 / 뷰티)</div>
+      <div class="chart-card-sub">일 평균 (₩) · W1~W14</div>
+      <canvas id="c-gmv-cat" height="135"></canvas>
+    </div>
+  </div>
+
+  <!-- 월간 GMV -->
+  <div class="section-title"><span class="dot" style="background:var(--purple)"></span>월별 카테고리 거래액 (합계) <span class="snote">4월은 4/28 기준 누적 실적 (약 26일)</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">월별 카테고리 합계 거래액</div>
+      <div class="chart-card-sub">단위: 억원 · 1~4월</div>
+      <canvas id="m-gmv-cat" height="140"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">공식 브랜드 점유율 월별 추이</div>
+      <div class="chart-card-sub">전체 거래액 대비 공식 브랜드 비중 (%)</div>
+      <canvas id="m-share" height="140"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- TAB 2: 광고 효율 & 신규 고객               -->
+<!-- ══════════════════════════════════════════ -->
+<div id="tab-ads" class="tab-content">
+
+  <div class="insight-banner cols-3">
+    <div class="insight-item" style="--ac:var(--green)">
+      <div class="ih"><span class="itag">META 신규 고객 비중 급등</span><span class="ititle">📈 META 신규 고객 비중 W17 38.3% — W16 대비 +4.6%p 큰 폭 개선</span></div>
+      <div class="isum">META 신규 고객 비중 W16 33.7% → W17 38.3% / 4월 월간 35.1%<br>W1(31%) 대비 꾸준한 개선</div>
+      <ul class="ibody">
+        <li>W17 META 신규 고객 CPP ₩69,104 — W16(₩65K) 대비 소폭 상승이나 저비용 구간 유지</li>
+        <li>4월 META CPD ₩39,542 — 분기 최저 수준 지속, 예산 효율 구간 유지</li>
+        <li>W12~W14 고점(37~36%) 이후 처음으로 38% 이상 — 신규 유입 퀄리티 회복 신호</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 신규 고객 비중 38% 회복 + 저비용 구간 유지<br>2Q KPI 84억 gap 해소를 위한 META 예산 증액 최적 타이밍</div>
+    </div>
+    <div class="insight-item" style="--ac:var(--teal)">
+      <div class="ih"><span class="itag">Google 신규 고객 비중 반등</span><span class="ititle">📊 Google 신규 고객 비중 W17 51.3% — 50% 회복 · 채널 역할 재정립 중</span></div>
+      <div class="isum">Google 신규 고객 비중 W16 48.9% → W17 51.3% (+2.4%p)<br>4월 월간 49.7%</div>
+      <ul class="ibody">
+        <li>2주 연속 하락 후 W17 반등 — 50% 경계선 회복으로 신규 획득 역할 유지</li>
+        <li>W17 Google 신규 고객 CPP ₩59,577 — W1(₩87K) 대비 −32% 수준 효율 유지</li>
+        <li>META: 신규 획득 / Google: 리타겟팅+재구매 채널 분화 구조 안착 중</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> Google 신규 고객 비중 50% 이상 유지 시 채널 믹스 최적 구간<br>45% 아래 하락 시 프로스펙팅 캠페인 예산 별도 확보 필요</div>
+    </div>
+    <div class="insight-item" style="--ac:var(--purple)">
+      <div class="ih"><span class="itag">채널 효율</span><span class="ititle">📉 전 채널 CPD·CAC 분기 내 지속 개선 — W17도 저비용 구간 유지</span></div>
+      <div class="isum">Google CPD −73% (₩235K→₩62K) / META CPD −57% (₩98K→₩42K)<br>4월 분기 최저 구간</div>
+      <ul class="ibody">
+        <li>Google CAC W1 ₩337K → W17 ₩94K (−72%), META CAC ₩131K → ₩69K (−47%)</li>
+        <li>W17 소폭 상승했으나 전체 추세는 하락 유지 — 캠페인 최적화 누적 효과 지속</li>
+        <li>4월 META CPD ₩39,542 · Google CPD ₩58,139 — 저비용 구간 유지</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 저비용 효율 구간 + 신규 고객 비중 동반 개선<br>5월 예산 증액 시 GMV·신규 고객 동시 드라이브 가능</div>
+    </div>
+  </div>
+
+  <!-- KPI 카드 -->
+  <div class="section-title"><span class="dot" style="background:var(--blue)"></span>광고 채널 핵심 지표 <span class="snote">W17 기준 / 4월 월간 기준</span></div>
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--ac:var(--purple)">
+      <div class="kpi-label">META 신규 고객 CPP<br>W17</div>
+      <div class="kpi-value">₩69,104</div>
+      <div class="kpi-sub warn">↑ W16(₩65K) 대비 소폭 상승</div>
+    </div>
+    <div class="kpi-card" style="--ac:var(--green)">
+      <div class="kpi-label">META 신규 고객 비중<br>W17</div>
+      <div class="kpi-value">38.3%</div>
+      <div class="kpi-sub up">↑ W16(33.7%) 대비<br>+4.6%p 큰 폭 반등</div>
+    </div>
+    <div class="kpi-card" style="--ac:var(--teal)">
+      <div class="kpi-label">Google Ads 신규 고객 CPP<br>W17</div>
+      <div class="kpi-value">₩59,577</div>
+      <div class="kpi-sub good">↓ W1(₩87,270) 대비 −32%</div>
+    </div>
+    <div class="kpi-card" style="--ac:var(--green)">
+      <div class="kpi-label">Google Ads 신규 고객 비중<br>W17</div>
+      <div class="kpi-value">51.3%</div>
+      <div class="kpi-sub up">↑ W16(48.9%) 대비<br>+2.4%p 반등, 50% 회복</div>
+    </div>
+  </div>
+
+  <!-- 주간 차트 -->
+  <div class="section-title"><span class="dot" style="background:var(--purple)"></span>META 광고 지표 주간 추이 <span class="snote">W1~W17</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">META CPD / CAC / 신규 고객 CPP</div>
+      <div class="chart-card-sub">단위: 원 (₩)<br>CPD: 앱 설치당 비용 / CAC: 고객 획득 비용 / 신규 고객 CPP: 신규 구매 전환당 비용</div>
+      <canvas id="c-meta-cost" height="130"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">META 신규 고객 비중 추이</div>
+      <div class="chart-card-sub">META 광고 구매 전환 중 신규 고객(앱 첫 구매자) 비중 (%)</div>
+      <canvas id="c-meta-fpr" height="130"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="dot" style="background:var(--teal)"></span>Google Ads 광고 지표 주간 추이 <span class="snote">W1~W17</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">Google Ads CPD / CAC / 신규 고객 CPP</div>
+      <div class="chart-card-sub">단위: 원 (₩)<br>CPD: 앱 설치당 비용 / CAC: 고객 획득 비용 / 신규 고객 CPP: 신규 구매 전환당 비용</div>
+      <canvas id="c-gads-cost" height="130"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Google Ads 신규 고객 비중 추이</div>
+      <div class="chart-card-sub">Google Ads 구매 전환 중 신규 고객(앱 첫 구매자) 비중 (%)</div>
+      <canvas id="c-gads-fpr" height="130"></canvas>
+    </div>
+  </div>
+
+  <!-- 월간 비교 -->
+  <div class="section-title"><span class="dot" style="background:var(--muted)"></span>채널별 월간 비교 <span class="snote">META vs Google Ads · 신규 고객 CPP & 신규 고객 비중</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">신규 고객 CPP 월별 비교 (META vs Google)</div>
+      <div class="chart-card-sub">신규 고객 1명 전환당 비용 (₩) · 1~4월</div>
+      <canvas id="m-cpp" height="140"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">신규 고객 비중 월별 비교 (META vs Google)</div>
+      <div class="chart-card-sub">매체 구매 전환 중 신규 고객(앱 첫 구매자) 비중 (%) · 1~4월</div>
+      <canvas id="m-fpr" height="140"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- TAB 3: 유저 & 리텐션                       -->
+<!-- ══════════════════════════════════════════ -->
+<div id="tab-user" class="tab-content">
+
+  <div class="insight-banner cols-2">
+    <div class="insight-item" style="--ac:var(--pink)">
+      <div class="ih"><span class="itag">여성 유저</span><span class="ititle">📊 여성 DAU W17 10,255 — 1만명대 유지 / 신규 9,006명으로 1만명대 아래</span></div>
+      <div class="isum">여성 DAU W1 8,356 → W17 10,255 (+23%)<br>신규 유저 W17 9,006명 — W12 이후 처음으로 1만명 이하</div>
+      <ul class="ibody">
+        <li>여성 신규 유입 W16(10,652) → W17(9,006)으로 하락 — 4주 연속 감소세, 모니터링 필요</li>
+        <li>여성 구매 전환율 W17 9.52% — W16(9.13%) 대비 소폭 개선, 남성(7.03%) 대비 우위 지속</li>
+        <li>여성 WAU 잔존 유저(WAU−신규): W17 35,025 — 리텐션 유지 중</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 여성 신규 유입 감소세 주시<br>1만명대 안착 유지를 위한 신규 획득 캠페인 강화 검토 필요</div>
+    </div>
+    <div class="insight-item" style="--ac:var(--blue)">
+      <div class="ih"><span class="itag">남성 유저</span><span class="ititle">📊 남성 DAU W17 46,657 — 하락세 지속 / 신규 7,459명으로 감소</span></div>
+      <div class="isum">남성 DAU W16 49,204 → W17 46,657 (−5%)<br>신규 유저 W16 8,401 → W17 7,459 (-11%)</div>
+      <ul class="ibody">
+        <li>남성 DAU 3주 연속 하락 — W1(55,839) 대비 -16%로 감소 폭 확대</li>
+        <li>남성 구매 전환율 W17 7.03% — W16(7.39%) 대비 소폭 하락, 6~7% 구간 안정</li>
+        <li>Stickiness (DAU/WAU): 남성 26.9% > 여성 23.3% — 재방문 빈도 우위 유지</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 남성 DAU·신규 유입 동반 감소 추세<br>맨즈웨어·병행수입 거래액 회복과 재방문 유도 강화 병행 필요</div>
+    </div>
+    <div class="insight-item insight-full" style="--ac:var(--teal)">
+      <div class="ih"><span class="itag">리키버킷 & 리텐션</span><span class="ititle">🪣 신규 유입 감소세 확대 — WAU 잔존 점검으로 리텐션 구조 확인 필요</span></div>
+      <div class="isum">여성 WAU 잔존: W1 30,218 → W17 35,025 (+16%)<br>남성 잔존: 183,579 → 166,287 (−9%, 감소 지속)</div>
+      <ul class="ibody">
+        <li>여성 신규 유입 감소(9,006명)에도 WAU 잔존 35,025 유지 → 기유입 유저의 리텐션은 안정적</li>
+        <li>남성 WAU 잔존 감소 지속 — 신규 유입 감소 + 이탈 누적으로 리키버킷 경고 신호</li>
+        <li>DAU/WAU: 여성 23.3%, 남성 26.9% — stickiness 소폭 하락이나 구조적 변화 없음</li>
+        <li>리키버킷 관점: 신규 유입 감소 + 잔존 유저 감소 동시 발생<br>첫구매→재구매 코호트 추적 도입 시급</li>
+      </ul>
+      <div class="iaction"><strong>💡</strong> 첫구매 후 7일/30일 리텐션 코호트 추적 도입 권장<br>남성 DAU 감소가 이탈인지 자연 조정인지 구분이 5월 전략 수립의 핵심</div>
+    </div>
+  </div>
+
+  <!-- 성별 주간 DAU -->
+  <div class="section-title"><span class="dot" style="background:var(--pink)"></span>성별 유저 DAU & 신규 유저 주간 추이 <span class="snote">W1~W17</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">성별 일 평균 DAU 주간 추이</div>
+      <div class="chart-card-sub">여성(우축) / 남성(좌축) · W1~W17</div>
+      <canvas id="c-dau" height="135"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">성별 주간 신규 유저 추이</div>
+      <div class="chart-card-sub">주간 합계 신규 유입 유저 수 · W1~W17</div>
+      <canvas id="c-new" height="135"></canvas>
+    </div>
+  </div>
+
+  <!-- 구매 전환율 & Stickiness -->
+  <div class="section-title"><span class="dot" style="background:var(--teal)"></span>구매 전환율 & Stickiness (DAU/WAU) <span class="snote">리텐션 & 리키버킷 지표</span></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-card-title">성별 일 평균 구매 전환율</div>
+      <div class="chart-card-sub">DAU 대비 구매자 비율 (%) · W1~W17</div>
+      <canvas id="c-cvr" height="135"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Stickiness (DAU/WAU) — 앱 재방문 빈도</div>
+      <div class="chart-card-sub">주간 활성 유저 대비 일간 활성 유저 비율 (%) · W1~W17</div>
+      <canvas id="c-sticky" height="135"></canvas>
+    </div>
+  </div>
+
+  <!-- 월간 유저 요약 -->
+  <div class="section-title"><span class="dot" style="background:var(--muted)"></span>성별 월간 유저 지표 <span class="snote">1~3월 (4월 데이터 집계 중)</span></div>
+  <div class="mom-grid" id="user-mom-cards"></div>
+
+</div>
+</div><!-- /main -->
+
+<script>
+/* ══════════════════════════════════
+   데이터
+══════════════════════════════════ */
+const WEEKS  = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12','W13','W14','W15','W16','W17'];
+const MONTHS = ['1월','2월','3월','4월'];
+
+const W = {
+  dailyGmv:   [439865263,521288776,368592566,375631261,436306069,419911904,388960150,593068417,493508441,489942759,444602294,455350997,460840843,468271907,451333989,388545746,319547739],
+  brandGmv:   [50150493,57545071,57360234,52184739,60477124,58141599,62006233,98761615,76438969,76376187,101200108,98768846,105750854,117238440,90118595,120050738,72637995],
+  brandShare: [11,11,16,14,14,14,16,17,15,16,23,22,23,25,20,31,23],
+  menswear:   [153489054,147217290,120652362,113431303,105999320,104300976,97994998,151888497,122166419,103240348,103299909,94059211,103465624,115963641,106410830,109258219,101951396],
+  parallel:   [226242987,303147375,185728749,201101103,260572635,250397657,220808302,326984630,286542929,305202091,270396072,257402083,240054436,229004428,251520138,152510633,138122761],
+  beauty:     [3241326,3693626,2205876,2609786,1767519,2060884,36594385,72184212,3960789,1846053,2043963,2852352,1617261,1677458,1345900,2410982,2132571],
+  other:      [6741405,9685415,2645345,6304330,7489470,5010788,4475306,7838861,4399336,5657712,4270596,2268506,9952667,4387940,1938525,4315174,4703016],
+  metaCpd:    [98230,87085,74267,96932,39911,47348,84177,73277,87237,79950,92013,37038,41505,35431,39773,39842,42497],
+  metaCac:    [131090,128094,123008,132688,95572,113252,139951,107093,122007,109658,121715,62878,66489,59749,63922,65300,69104],
+  metaCpp:    [60886,68868,80902,82229,77909,96118,110523,78497,84798,82705,75046,53768,54062,54151,63107,64761,69104],
+  metaFpr:    [31.14,30.81,32.32,32.35,29.38,29.48,33.59,32.72,33.28,31.60,33.42,37.43,36.76,36.21,33.16,33.74,38.34],
+  gadsCpd:    [234659,222774,148653,197281,118901,172637,88185,59091,74252,75626,90425,61144,59765,52912,61927,56043,62411],
+  gadsCac:    [337010,304637,251223,271527,223780,274694,154561,91776,106502,108907,127783,99306,86546,90586,95176,90260,94347],
+  gadsCpp:    [87270,79139,92192,89546,85326,111981,76458,52735,56834,66974,68773,58945,52320,52666,54386,57770,59577],
+  gadsFpr:    [67.85,64.81,60.29,66.20,64.20,55.16,46.96,47.80,43.48,41.72,52.48,51.10,52.73,48.16,51.53,48.92,51.27],
+  femDAU:     [8356,7621,7484,7769,8063,8099,8468,11276,9729,9079,8903,9658,10295,10928,11023,10670,10255],
+  femWAU:     [33229,31708,31232,32571,33373,33597,35072,44832,40980,38000,37892,41861,44422,48116,47485,46361,44031],
+  femNew:     [3011,5627,5221,5461,6647,6575,5626,8740,6508,6660,6490,10379,11472,11488,11524,10652,9006],
+  femBuyers:  [896,993,863,803,957,819,838,1078,966,890,1820,958,981,1001,989,974,976],
+  femCvr:     [10.72,13.03,11.53,10.34,11.87,10.11,9.89,9.56,9.93,9.80,20.44,9.92,9.53,9.16,8.97,9.13,9.52],
+  maleDAU:    [55839,51592,49291,50779,48775,48975,54539,74296,58581,52633,50489,47361,49348,51748,51317,49204,46657],
+  maleWAU:    [190471,182393,179009,183917,177638,178984,197173,239661,213150,191696,184677,176172,182601,192277,188143,182476,173746],
+  maleNew:    [6892,11190,9852,9869,9403,9566,9900,13978,9742,9462,8334,8328,9605,9381,8769,8401,7459],
+  maleBuyers: [3845,4086,3144,3110,3294,3119,1113,3725,3862,3595,3445,3294,3661,3617,3616,3635,3282],
+  maleCvr:    [6.89,7.92,6.38,6.12,6.75,6.37,2.04,5.01,6.59,6.83,6.82,6.95,7.42,6.99,7.05,7.39,7.03],
+};
+
+const M = {
+  brandShare:  [13,15,21,25],
+  totalGmv:    [13239308260,13246697120,14338983970,10464398703],
+  brandGmv:    [1728395071,2051906670,2974761676,2580939983],
+  menswear:    [3906784347,3342818664,3179409660,2794045951],
+  parallel:    [7318794540,7578414396,8219144946,4945090210],
+  beauty:      [82693895,803294318,64361150,49641271],
+  other:       [202640407,152822377,174222447,94681288],
+  dailyGmv:    [427074460,473096326,462547870,402476873],
+  brandDaily:  [55754680,73282381,95960054,99266922],
+  metaCpd:     [70223,70018,57368,39542],
+  metaCac:     [120070,118466,86889,65168],
+  metaCpp:     [75516,89322,65980,64098],
+  metaFpr:     [30.99,32.22,35.12,35.05],
+  gadsCpd:     [174032,83909,69397,58139],
+  gadsCac:     [271753,130715,103886,92424],
+  gadsCpp:     [86510,67480,60735,56343],
+  gadsFpr:     [64.23,47.15,49.44,49.74],
+  femDAU:      [7793,9328,9563],
+  femMAU:      [89985,96865,115412],
+  femNew:      [24897,27573,39107],
+  femBuyers:   [899,926,1143],
+  femCvr:      [11.53,9.93,11.95],
+  maleDAU:     [50871,58939,50087],
+  maleMAU:     [406330,425833,413723],
+  maleNew:     [45671,43145,40206],
+  maleBuyers:  [3467,2947,3509],
+  maleCvr:     [6.82,5.00,7.01],
+};
+
+// 2Q KPI (4월 28일 기준 일평균 × 91일)
+const KPI2Q = {
+  total:    { label:'전체 거래액',    target: 45000000000, daily: 402476873,  ac:'var(--red)'    },
+  brand:    { label:'브랜드 공식',    target: 12000000000, daily:  99266922,  ac:'var(--yellow)' },
+  menswear: { label:'맨즈웨어',       target: 12000000000, daily: 107463306,  ac:'var(--blue)'   },
+  parallel: { label:'브랜드 병행',    target: 20000000000, daily: 190195777,  ac:'var(--purple)' },
+  beauty:   { label:'뷰티(맨즈케어)', target:   400000000, daily:   1909280,  ac:'var(--orange)' },
+  other:    { label:'기타',           target:   600000000, daily:   3641588,  ac:'var(--muted)'  },
+};
+
+/* ══════════════════════════════════
+   유틸
+══════════════════════════════════ */
+const Q2_DAYS = 91;
+const fmtB  = n => (n/1e8).toFixed(1) + '억';
+const fmtM2 = n => '₩' + (n/1e6).toFixed(1) + 'M';
+const fmtK  = n => '₩' + Math.round(n/1000) + 'K';
+const fmt   = n => '₩' + n.toLocaleString('ko-KR');
+
+const C = {
+  blue:'#58a6ff', orange:'#ff7b54', green:'#3fb950',
+  teal:'#39d0d8', purple:'#bc8cff', red:'#f85149',
+  yellow:'#d29922', pink:'#ff6eb3', muted:'#8b949e'
+};
+const a = (hex, op) => {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${op})`;
+};
+
+Chart.defaults.color = '#8b949e';
+Chart.defaults.font.family = "'Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+Chart.defaults.font.size = 13;
+const grid = 'rgba(48,54,61,0.8)';
+
+const ttip = {
+  backgroundColor:'#1e2530', borderColor:'#30363d', borderWidth:1, padding:9,
+  callbacks: {
+    label: ctx => {
+      const v=ctx.raw, l=ctx.dataset.label;
+      if(!l) return;
+      if(l.includes('%') || l.includes('율') || l.includes('Sticky')) return ` ${l}: ${typeof v==='number'?v.toFixed(1):''}%`;
+      if(v>=1e8) return ` ${l}: ₩${(v/1e8).toFixed(2)}억`;
+      if(v>=1e6) return ` ${l}: ₩${(v/1e6).toFixed(1)}M`;
+      if(v>1000) return ` ${l}: ${v.toLocaleString()}`;
+      return ` ${l}: ${v}`;
+    }
+  }
+};
+
+function axY(prefix='₩', right=false) {
+  return {
+    position: right ? 'right' : 'left',
+    grid: { color: right ? 'transparent' : grid },
+    border: { color: grid },
+    ticks: {
+      maxTicksLimit: 6,
+      callback: v => {
+        if(prefix==='%') return v+'%';
+        if(prefix==='명') return v.toLocaleString();
+        if(v>=1e8) return '₩'+(v/1e8).toFixed(1)+'억';
+        if(v>=1e6) return '₩'+(v/1e6).toFixed(0)+'M';
+        return '₩'+v.toLocaleString();
+      }
+    }
+  };
+}
+const axX = { grid:{display:false}, ticks:{maxRotation:0}, border:{color:grid} };
+
+function lineDs(label, data, color, yAxisID='y', fill=false) {
+  return { label, data, yAxisID, borderColor:color, backgroundColor: fill ? a(color,.12) : a(color,.05),
+    borderWidth:2.2, pointRadius:3.5, pointHoverRadius:6,
+    pointBackgroundColor:color, pointBorderColor:'#0d1117', pointBorderWidth:1.5,
+    tension:0.4, fill };
+}
+function barDs(label, data, color) {
+  return { label, data, backgroundColor:a(color,.72), borderColor:color,
+    borderWidth:1, borderRadius:4, borderSkipped:false, hoverBackgroundColor:color };
+}
+
+function mkChart(id, type, datasets, labels, scales, extraOpts={}) {
+  return new Chart(document.getElementById(id), {
+    type, data: { labels, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { position:'bottom', labels:{ usePointStyle:true, padding:14, pointStyleWidth:9 } },
+        tooltip: ttip
+      },
+      scales: { x: axX, ...scales },
+      ...extraOpts
+    }
+  });
+}
+
+/* ══════════════════════════════════
+   2Q KPI 진척도 카드 생성
+══════════════════════════════════ */
+(function buildKpiCards() {
+  const container = document.getElementById('kpi2q-cards');
+  Object.entries(KPI2Q).forEach(([key, kpi]) => {
+    const pace    = kpi.daily * Q2_DAYS;
+    const pct     = Math.min(pace / kpi.target * 100, 150);
+    const pctShow = (pace / kpi.target * 100).toFixed(1);
+    const pctColor = pct >= 100 ? 'var(--green)' : pct >= 90 ? 'var(--yellow)' : pct >= 70 ? 'var(--orange)' : 'var(--red)';
+    const barW   = Math.min(pct, 100);
+    const isMain = key === 'total';
+    const card = document.createElement('div');
+    card.className = 'kpi2q-card' + (isMain ? ' main-kpi' : '');
+    card.style.setProperty('--ac', kpi.ac);
+    card.innerHTML = `
+      <div class="kpi2q-label">${kpi.label}</div>
+      <div class="kpi2q-target">목표 <span>${fmtB(kpi.target)}</span></div>
+      <div class="kpi2q-pace" style="color:${pctColor}">${fmtB(pace)} 예상</div>
+      <div class="kpi2q-bar-wrap"><div class="kpi2q-bar" style="width:${barW}%;background:${pctColor}"></div></div>
+      <div class="kpi2q-pct"><span>pace ${pctShow}%</span><span>일평균 ${fmtM2(kpi.daily)}</span></div>`;
+    container.appendChild(card);
+  });
+})();
+
+/* ══════════════════════════════════
+   차트: 거래액 탭
+══════════════════════════════════ */
+// 주간 전체 + 공식
+mkChart('c-gmv-main', 'line',
+  [lineDs('일 평균 거래액', W.dailyGmv, C.blue),
+   lineDs('공식 브랜드 거래액', W.brandGmv, C.orange),
+   { ...lineDs('공식 브랜드 점유율(%)', W.brandShare, C.green, 'y2'), fill:true, backgroundColor:a(C.green,.1) }],
+  WEEKS,
+  { y: axY('₩'), y2: { ...axY('%',true), ticks:{ callback: v=>v+'%', maxTicksLimit:6 } } }
+);
+
+// 주간 카테고리
+mkChart('c-gmv-cat', 'line',
+  [lineDs('맨즈웨어', W.menswear, C.blue),
+   lineDs('병행수입', W.parallel, C.purple),
+   lineDs('뷰티', W.beauty, C.pink)],
+  WEEKS, { y: axY('₩') }
+);
+
+// 월간 카테고리 (억원 환산) — 4월은 4/28 기준 누적 실적
+const toOk = n => parseFloat((n/1e8).toFixed(2));
+mkChart('m-gmv-cat', 'bar',
+  [barDs('맨즈웨어',  [3906784347,3342818664,3179409660,2794045951].map(toOk), C.blue),
+   barDs('브랜드 공식', [1728395071,2051906670,2974761676,2580939983].map(toOk), C.green),
+   barDs('병행수입',  [7318794540,7578414396,8219144946,4945090210].map(toOk), C.purple),
+   barDs('뷰티',      [82693895,803294318,64361150,49641271].map(toOk), C.pink)],
+  MONTHS,
+  { y: { ...axY('₩'), ticks:{ callback:v=>v+'억', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } },
+  { plugins: { ...{}, tooltip: { ...ttip, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}억원` } } } }
+);
+
+// 월간 점유율
+mkChart('m-share', 'bar',
+  [{ ...barDs('공식 브랜드 점유율', M.brandShare, C.green),
+     backgroundColor: M.brandShare.map((_,i)=>a(C.green, 0.45+i*0.15)) }],
+  MONTHS,
+  { y: { ...axY('%',false), ticks:{ callback:v=>v+'%', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+/* ══════════════════════════════════
+   차트: 광고 효율 탭
+══════════════════════════════════ */
+mkChart('c-meta-cost', 'line',
+  [lineDs('META CPD', W.metaCpd, C.purple),
+   lineDs('META CAC', W.metaCac, C.red),
+   lineDs('META 신규 고객 CPP', W.metaCpp, C.pink)],
+  WEEKS, { y: axY('₩') }
+);
+
+mkChart('c-meta-fpr', 'line',
+  [{ ...lineDs('META 신규 고객 비중(%)', W.metaFpr, C.purple), fill:true, backgroundColor:a(C.purple,.12) }],
+  WEEKS,
+  { y: { ...axY('%'), ticks:{ callback:v=>v+'%', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+mkChart('c-gads-cost', 'line',
+  [lineDs('Google CPD', W.gadsCpd, C.teal),
+   lineDs('Google CAC', W.gadsCac, C.blue),
+   lineDs('Google 신규 고객 CPP', W.gadsCpp, C.orange)],
+  WEEKS, { y: axY('₩') }
+);
+
+mkChart('c-gads-fpr', 'line',
+  [{ ...lineDs('Google 신규 고객 비중(%)', W.gadsFpr, C.teal), fill:true, backgroundColor:a(C.teal,.12) }],
+  WEEKS,
+  { y: { ...axY('%'), ticks:{ callback:v=>v+'%', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+mkChart('m-cpp', 'bar',
+  [barDs('META 신규 고객 CPP', M.metaCpp, C.purple),
+   barDs('Google 신규 고객 CPP', M.gadsCpp, C.teal)],
+  MONTHS, { y: axY('₩') }
+);
+
+mkChart('m-fpr', 'bar',
+  [barDs('META 신규 고객 비중', M.metaFpr, C.purple),
+   barDs('Google 신규 고객 비중', M.gadsFpr, C.teal)],
+  MONTHS,
+  { y: { ...axY('%'), ticks:{ callback:v=>v+'%', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+/* ══════════════════════════════════
+   차트: 유저 & 리텐션 탭
+══════════════════════════════════ */
+// DAU (dual axis: 남성 좌, 여성 우)
+mkChart('c-dau', 'line',
+  [lineDs('남성 DAU', W.maleDAU, C.blue, 'y'),
+   lineDs('여성 DAU', W.femDAU, C.pink, 'y2')],
+  WEEKS,
+  {
+    y:  { ...axY('명'), ticks:{ callback:v=>v.toLocaleString(), maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} },
+    y2: { ...axY('명',true), ticks:{ callback:v=>v.toLocaleString(), maxTicksLimit:6 } }
+  }
+);
+
+// 신규 유저
+mkChart('c-new', 'bar',
+  [barDs('남성 신규', W.maleNew, C.blue),
+   barDs('여성 신규', W.femNew, C.pink)],
+  WEEKS,
+  { y: { ...axY('명'), ticks:{ callback:v=>v.toLocaleString(), maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+// 구매 전환율
+mkChart('c-cvr', 'line',
+  [lineDs('남성 구매 전환율(%)', W.maleCvr, C.blue),
+   lineDs('여성 구매 전환율(%)', W.femCvr, C.pink)],
+  WEEKS,
+  { y: { ...axY('%'), ticks:{ callback:v=>v+'%', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+// DAU/WAU Stickiness
+const femSticky = W.femDAU.map((d,i) => parseFloat((d/W.femWAU[i]*100).toFixed(1)));
+const maleSticky = W.maleDAU.map((d,i) => parseFloat((d/W.maleWAU[i]*100).toFixed(1)));
+mkChart('c-sticky', 'line',
+  [lineDs('남성 Sticky (DAU/WAU, %)', maleSticky, C.blue, 'y', false),
+   lineDs('여성 Sticky (DAU/WAU, %)', femSticky, C.pink, 'y', false)],
+  WEEKS,
+  { y: { ...axY('%'), ticks:{ callback:v=>v+'%', maxTicksLimit:6 }, grid:{color:grid}, border:{color:grid} } }
+);
+
+/* ══════════════════════════════════
+   월간 유저 MoM 카드
+══════════════════════════════════ */
+(function buildUserMom() {
+  const metrics = [
+    { label:'여성 DAU',      femVals: M.femDAU,    maleVals: M.maleDAU,    fmt: v=>v.toLocaleString(), isCost:false },
+    { label:'MAU',           femVals: M.femMAU,    maleVals: M.maleMAU,    fmt: v=>v.toLocaleString(), isCost:false },
+    { label:'월 신규 유저',   femVals: M.femNew,    maleVals: M.maleNew,    fmt: v=>v.toLocaleString(), isCost:false },
+    { label:'일평균 구매자',  femVals: M.femBuyers, maleVals: M.maleBuyers, fmt: v=>v.toLocaleString(), isCost:false },
+    { label:'구매 전환율',    femVals: M.femCvr,    maleVals: M.maleCvr,    fmt: v=>v.toFixed(2)+'%',  isCost:false },
+  ];
+  const cols = ['1월','2월','3월'];
+  const container = document.getElementById('user-mom-cards');
+  ['여성','남성'].forEach(gender => {
+    cols.forEach((mon, mi) => {
+      const card = document.createElement('div'); card.className = 'mom-card';
+      const gcolor = gender === '여성' ? C.pink : C.blue;
+      let html = `<div class="mom-month" style="color:${gcolor}">👤 ${gender} · ${mon}</div>`;
+      metrics.forEach(m => {
+        const vals = gender === '여성' ? m.femVals : m.maleVals;
+        const v = vals[mi], prev = mi > 0 ? vals[mi-1] : null;
+        let badge = '';
+        if (prev !== null) {
+          const chg = ((v-prev)/prev*100).toFixed(1), isUp = v > prev;
+          const cls = m.isCost ? (isUp?'mb-down':'mb-good') : (isUp?'mb-up':'mb-down');
+          badge = `<span class="mb ${cls}">${isUp?'↑':'↓'}${Math.abs(chg)}%</span>`;
+        }
+        html += `<div class="mom-row"><span class="mom-metric">${m.label}</span><span class="mom-val">${m.fmt(v)}${badge}</span></div>`;
+      });
+      card.innerHTML = html; container.appendChild(card);
+    });
+  });
+})();
+
+/* ══════════════════════════════════
+   탭 전환
+══════════════════════════════════ */
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
