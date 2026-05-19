@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>구글애즈 주간 성과 대시보드 · W20 (2026-05-11~17)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#0d1117; --surface:#161b22; --surface2:#1e2530; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e;
+    --blue:#58a6ff; --orange:#ff7b54; --green:#3fb950;
+    --teal:#39d0d8; --purple:#bc8cff; --red:#f85149;
+    --yellow:#d29922; --pink:#ff6eb3;
+    --google-blue:#4285F4; --google-green:#34A853; --google-red:#EA4335; --google-yellow:#FBBC04;
+    --ios:#A2AAAD; --aos:#3DDC84;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); font-size:15px; }
+
+  .header {
+    background: linear-gradient(135deg,#0d1117 0%,#1a2236 40%,#0d1117 100%);
+    border-bottom:1px solid var(--border); padding:20px 36px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100;
+  }
+  .header-left { display:flex; align-items:center; gap:12px; }
+  .logo {
+    background:linear-gradient(135deg,var(--google-blue),var(--google-green));
+    border-radius:9px; padding:6px 13px; font-weight:800; font-size:15px; letter-spacing:.5px;
+  }
+  .header h1 { font-size:18px; font-weight:700; }
+  .header-meta { font-size:13px; color:var(--muted); margin-top:1px; }
+  .badge-date { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:5px 11px; font-size:13px; color:var(--muted); }
+
+  .main { padding:24px 36px; max-width:1640px; margin:0 auto; }
+
+  /* ── 인사이트 배너 ── */
+  .insight-banner { display:grid; gap:10px; margin-bottom:22px; }
+  .insight-banner.cols-3 { grid-template-columns:repeat(3,1fr); }
+  .insight-banner.cols-2 { grid-template-columns:repeat(2,1fr); }
+  @media(max-width:1100px){ .insight-banner.cols-3 { grid-template-columns:1fr 1fr; } }
+  @media(max-width:700px){ .insight-banner.cols-3,.insight-banner.cols-2 { grid-template-columns:1fr; } }
+  .insight-item {
+    background:var(--surface); border:1px solid var(--border);
+    border-left:4px solid var(--ac); border-radius:10px;
+    padding:16px 18px; display:flex; flex-direction:column; gap:9px;
+  }
+  .insight-full { grid-column:1/-1; }
+  .ih { display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
+  .itag { font-size:12px; font-weight:700; padding:2px 8px; border-radius:4px; background:color-mix(in srgb, var(--ac) 18%, transparent); color:var(--ac); }
+  .ititle { font-size:15px; font-weight:700; color:var(--text); line-height:1.5; }
+  .isum { font-size:13px; font-weight:600; color:var(--ac); }
+  .ibody { font-size:13px; color:var(--muted); line-height:1.8; }
+  .ibody li { margin-left:14px; margin-bottom:3px; }
+  .iaction { margin-top:2px; background:rgba(210,153,34,.1); border:1px solid rgba(210,153,34,.25); border-radius:6px; padding:9px 12px; font-size:13px; color:#e0c060; line-height:1.7; }
+  .iaction strong { color:#f0d070; }
+
+  /* ── KPI 카드 ── */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:22px; }
+  .kpi-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px; }
+  @media(max-width:1000px){ .kpi-grid,.kpi-grid-3 { grid-template-columns:repeat(2,1fr); } }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; position:relative; overflow:hidden; }
+  .kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:var(--ac); }
+  .kpi-label { font-size:13px; color:var(--muted); margin-bottom:6px; line-height:1.5; }
+  .kpi-value { font-size:24px; font-weight:800; color:var(--ac); margin-bottom:4px; letter-spacing:-.5px; }
+  .kpi-sub { font-size:12px; color:var(--muted); line-height:1.5; }
+  .up { color:var(--green) !important; }
+  .down { color:var(--red) !important; }
+  .good { color:var(--teal) !important; }
+  .warn { color:var(--yellow) !important; }
+  .neutral { color:var(--muted) !important; }
+
+  /* ── 양/음 매트릭스 ── */
+  .health-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:24px 28px; margin-bottom:22px; position:relative; overflow:hidden;
+  }
+  .health-card::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(90deg,var(--google-blue),var(--google-yellow),var(--google-red)); }
+  .health-card-title { font-size:15px; font-weight:700; margin-bottom:5px; }
+  .health-card-sub { font-size:13px; color:var(--muted); margin-bottom:18px; }
+  .health-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:900px) { .health-grid { grid-template-columns:1fr; } }
+  .health-box {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; padding:18px 20px; position:relative;
+  }
+  .health-box.positive { border-left:4px solid var(--green); }
+  .health-box.negative { border-left:4px solid var(--red); }
+  .health-box.neutral { border-left:4px solid var(--yellow); }
+  .health-tag { font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; display:inline-block; margin-bottom:8px; }
+  .health-tag.positive { background:rgba(63,185,80,.15); color:var(--green); }
+  .health-tag.negative { background:rgba(248,81,73,.15); color:var(--red); }
+  .health-tag.neutral { background:rgba(210,153,34,.15); color:var(--yellow); }
+  .health-title { font-size:14px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .health-ratio { font-size:38px; font-weight:800; letter-spacing:-1px; margin-bottom:4px; line-height:1; }
+  .health-formula { font-size:12px; color:var(--muted); font-family:'SF Mono',Menlo,monospace; }
+  .health-wow {
+    margin-top:12px; padding-top:12px; border-top:1px dashed var(--border);
+    font-size:13px; color:var(--muted); display:flex; justify-content:space-between; align-items:center;
+  }
+  .health-wow strong { color:var(--text); font-size:14px; }
+
+  .compare-bar { margin-top:14px; }
+  .compare-bar-label { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .compare-track { background:var(--bg); border-radius:6px; height:24px; position:relative; overflow:hidden; border:1px solid var(--border); }
+  .compare-fill { height:100%; border-radius:6px; transition:width .8s ease; position:relative; }
+  .compare-fill.pos { background:linear-gradient(90deg,var(--green),var(--teal)); }
+  .compare-fill.neg { background:linear-gradient(90deg,var(--red),var(--orange)); }
+  .compare-target { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--yellow); z-index:5; }
+  .compare-target::after { content:'손익분기 100%'; position:absolute; top:-15px; left:-44px; font-size:10px; color:var(--yellow); font-weight:700; white-space:nowrap; }
+
+  /* ── 섹션 ── */
+  .section-title { font-size:16px; font-weight:700; margin-bottom:14px; padding-bottom:9px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:7px; margin-top:8px; }
+  .dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .snote { font-size:13px; color:var(--muted); font-weight:400; margin-left:4px; }
+
+  /* ── OS 비교 카드 ── */
+  .os-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:22px; }
+  @media(max-width:900px){ .os-grid { grid-template-columns:1fr; } }
+  .os-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:20px 22px; position:relative; overflow:hidden;
+  }
+  .os-card.ios::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(90deg,var(--ios),#cccccc); }
+  .os-card.aos::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(90deg,var(--aos),#5fffa0); }
+  .os-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:18px; }
+  .os-name { font-size:18px; font-weight:800; letter-spacing:-.3px; }
+  .os-name.ios { color:var(--ios); }
+  .os-name.aos { color:var(--aos); }
+  .os-share { font-size:12px; color:var(--muted); }
+  .os-share strong { font-size:18px; font-weight:800; }
+  .os-share.ios strong { color:var(--ios); }
+  .os-share.aos strong { color:var(--aos); }
+  .os-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .os-mini {
+    background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px;
+  }
+  .os-mini .lbl { font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .os-mini .val { font-size:18px; font-weight:800; letter-spacing:-.3px; }
+  .os-mini .sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .os-ratio-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .os-ratio {
+    background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+    padding:12px 14px; border-left:3px solid var(--ac);
+  }
+  .os-ratio .lbl { font-size:11px; color:var(--muted); margin-bottom:5px; line-height:1.4; }
+  .os-ratio .val { font-size:22px; font-weight:800; color:var(--ac); }
+  .os-ratio .sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .os-ratio.pos { --ac:var(--green); }
+  .os-ratio.neg { --ac:var(--red); }
+  .os-ratio.warn { --ac:var(--yellow); }
+
+  /* ── 차트 그리드 ── */
+  .chart-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:22px; }
+  .chart-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:22px; }
+  @media(max-width:1100px){ .chart-grid-2,.chart-grid-3 { grid-template-columns:1fr; } }
+  .chart-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+  .chart-card-title { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .chart-card-sub { font-size:12.5px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
+  .chart-wrap { position:relative; height:280px; }
+  .chart-wrap-tall { position:relative; height:340px; }
+
+  /* ── 퍼널 ── */
+  .funnel-row { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  @media(max-width:1000px){ .funnel-row { grid-template-columns:repeat(3,1fr); } }
+  .funnel-step {
+    background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+    padding:14px 12px; text-align:center; position:relative;
+  }
+  .funnel-step .fl { font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .funnel-step .fv { font-size:22px; font-weight:800; color:var(--ac); letter-spacing:-.5px; }
+  .funnel-step .fp { font-size:11px; color:var(--muted); margin-top:4px; }
+  .funnel-step.lo .fv { color:var(--red); }
+  .funnel-step.mid .fv { color:var(--yellow); }
+  .funnel-step.hi .fv { color:var(--green); }
+
+  /* ── 테이블 ── */
+  .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:auto; margin-bottom:22px; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; min-width:1100px; }
+  th { background:var(--surface2); color:var(--muted); font-weight:600; padding:9px 10px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; font-size:12px; }
+  th:first-child, th:nth-child(2) { text-align:left; }
+  td { padding:9px 10px; border-bottom:1px solid var(--border); text-align:right; font-variant-numeric:tabular-nums; }
+  td:first-child, td:nth-child(2) { text-align:left; color:var(--text); font-weight:600; font-size:12px; }
+  td:nth-child(2) { color:var(--muted); font-weight:500; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--surface2); }
+  .tot-row td { background:var(--surface2); font-weight:700; color:var(--text) !important; }
+  .ratio-badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:11.5px; font-weight:700; }
+  .ratio-badge.pos { background:rgba(63,185,80,.18); color:var(--green); }
+  .ratio-badge.neg { background:rgba(248,81,73,.18); color:var(--red); }
+  .ratio-badge.warn { background:rgba(210,153,34,.18); color:var(--yellow); }
+  .ratio-badge.zero { background:rgba(139,148,158,.15); color:var(--muted); }
+  .ratio-badge.flag { background:rgba(248,81,73,.22); color:#ff8b86; border:1px dashed var(--red); }
+
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Google Ads</div>
+    <div>
+      <h1>구글애즈 주간 성과 대시보드 · W20</h1>
+      <div class="header-meta">유저 획득 효율 vs 양질의 유저 획득 분석 · iOS/AOS 분리</div>
+    </div>
+  </div>
+  <div class="badge-date">기준 주차: 2026-05-11 ~ 05-17 (iOS) / 2026-05-12 ~ 05-18 (AOS)</div>
+</div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 1. 주간 요약                                 -->
+<!-- ══════════════════════════════════════════ -->
+<div class="insight-banner">
+  <div class="insight-item insight-full" style="--ac:var(--blue)">
+    <div class="ih">
+      <span class="itag">📌 W20 주간 요약</span>
+      <span class="ititle">양적 회복은 진행 중 · 다만 가져온 유저의 <strong>D7 매출 기여(질)</strong>는 전주 대비 약 30% 하락</span>
+    </div>
+    <div class="isum">W20 핵심: 첫설치 +20% · 가입 +43% · CPNI/CPA 효율 개선 / 다만 두 D7 ARPU 모두 -30%대 / 첫설치-가입 코호트 갭은 알려진 리타겟팅 혼입 패턴과 일관</div>
+    <ul class="ibody">
+      <li><strong>양 (개선)</strong> · 4주간 하락하던 첫설치/가입 볼륨이 W20에 반등 · CPNI ₩5,068→₩4,556 (-10%), CPA ₩28,491→₩21,392 (-25%)</li>
+      <li><strong>질 (악화)</strong> · 첫설치 D7 ARPU ₩7,712→₩5,335 (-31%), 회원가입 D7 ARPU ₩15,000→₩9,840 (-34%) · 같은 비용으로 데려온 유저가 덜 사고 있음</li>
+      <li><strong>두 ratio 갭은 기존 인식과 일관</strong> · 첫설치 ratio 117% vs 회원가입 ratio 46% — 리타겟팅 혼입 영향이 첫설치 코호트에 반영되는 알려진 현상. 실제 신규 유저 효율을 보는 진짜 지표는 회원가입 ratio (현재 음)</li>
+      <li><strong>OS별 양상이 다름</strong> · AOS는 회원가입 ARPU &gt; 첫설치 ARPU로 정상 패턴 / iOS는 ARPU 역전 + W20 가입 ratio 38%→11% 큰 폭 하락 (SKAN 어트리뷰션 노이즈 가능성)</li>
+    </ul>
+    <div class="iaction">
+      <strong>💡 다음 2주 논의 포인트 (팀 공통)</strong> &nbsp;
+      ① <strong>회원가입 ratio를 메인 효율 지표로 운영</strong> — 첫설치 ratio는 리타겟팅 영향이 섞여있다는 전제 하에 보조 지표로 ·
+      ② <strong>D7 ARPU -30% 하락 원인 진단</strong> — 시즌성/캠페인 믹스 변화/콘텐츠 영향 중 어느 것인지 ·
+      ③ <strong>iOS는 비중 작아 우선순위 낮지만 ARPU 역전 추이 모니터링</strong> — W19→W20 1주 변동이 일시적인지 추세인지 확인 필요
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 2. KPI 양/음 매트릭스 (전체)                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="health-card">
+  <div class="health-card-title">🎯 마케팅 KPI 양의 성과 매트릭스 · W20 전체 합산</div>
+  <div class="health-card-sub">두 핵심 KPI가 손익분기 100%를 넘는지 / 두 지표의 갭은 "리타겟팅 혼입" 정도를 가늠하는 신호</div>
+
+  <div class="health-grid">
+    <div class="health-box neutral">
+      <span class="health-tag neutral">⚠ 양이지만 과대평가 의심</span>
+      <div class="health-title">KPI 1 · 첫설치 D7 누적 ARPU / CPNI<br><span style="font-size:12px">— 리타겟팅 혼입 시 부풀려지는 지표</span></div>
+      <div class="health-ratio" style="color:var(--yellow)">117%</div>
+      <div class="health-formula">₩5,335 (ARPU) ÷ ₩4,556 (CPNI)</div>
+      <div class="compare-bar">
+        <div class="compare-bar-label"><span>0%</span><span>100% (BEP)</span><span>200%</span></div>
+        <div class="compare-track">
+          <div class="compare-fill" style="width:58.5%; background:linear-gradient(90deg,var(--yellow),var(--orange))"></div>
+          <div class="compare-target" style="left:50%"></div>
+        </div>
+      </div>
+      <div class="health-wow">
+        <span>전주(W19) 152% → <strong style="color:var(--red)">117%</strong> (-35%p)</span>
+        <span class="ratio-badge neg">WoW ↓</span>
+      </div>
+    </div>
+
+    <div class="health-box negative">
+      <span class="health-tag negative">✗ 음의 성과 (진짜 신호)</span>
+      <div class="health-title">KPI 2 · 회원가입자 D7 누적 ARPU / CPA<br><span style="font-size:12px">— 순수 신규 유저 가치 (리타겟팅 영향 적음)</span></div>
+      <div class="health-ratio" style="color:var(--red)">46%</div>
+      <div class="health-formula">₩9,840 (ARPU) ÷ ₩21,392 (CPA)</div>
+      <div class="compare-bar">
+        <div class="compare-bar-label"><span>0%</span><span>100% (BEP)</span><span>200%</span></div>
+        <div class="compare-track">
+          <div class="compare-fill neg" style="width:23%"></div>
+          <div class="compare-target" style="left:50%"></div>
+        </div>
+      </div>
+      <div class="health-wow">
+        <span>전주(W19) 53% → <strong style="color:var(--red)">46%</strong> (-7%p)</span>
+        <span class="ratio-badge neg">WoW ↓</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px; padding:14px 16px; background:rgba(255,123,84,.06); border:1px solid rgba(255,123,84,.25); border-radius:8px;">
+    <div style="font-size:13px; font-weight:700; color:var(--orange); margin-bottom:6px;">🔍 왜 두 KPI가 반대 방향인가? — 리타겟팅 혼입 가설</div>
+    <div style="font-size:12.5px; color:var(--text); line-height:1.75;">
+      회원 가입 없이는 구매 자체가 불가능 → <strong>모든 구매자는 가입자</strong>. 그런데 첫설치 코호트 매출이 회원가입 코호트 매출의 2.5배.<br>
+      이 갭을 설명할 수 있는 시나리오:<br>
+      ① <strong>UAC 머신러닝이 기존 회원에게 광고를 노출</strong> → 기존 회원이 광고를 클릭 → 앱 재설치(또는 디바이스 변경) → "첫설치"로 카운트되지만 가입 이벤트는 없음 (이미 회원)<br>
+      ② <strong>디바이스 단위 어트리뷰션의 한계</strong> · 같은 사람의 두 번째 디바이스 설치도 "첫설치"가 됨<br>
+      ③ <strong>SKAN 어트리뷰션 오차</strong> (iOS 한정) · 실제와 SKAN 카운트 간 큰 갭<br>
+      <span style="color:var(--yellow); font-weight:600;">→ 실제 광고 효율의 진짜 지표는 <strong style="color:var(--red);">회원가입 ratio 46%</strong>이며, 광고비의 상당 부분이 오가닉으로 올 수 있는 기존 회원에게 사용되고 있을 가능성이 큼</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 3. iOS vs AOS 비교 (메인)                    -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="dot" style="background:var(--orange)"></span>
+  iOS vs AOS · OS별 성과 비교
+  <span class="snote">· W20 기준 · 두 OS는 매우 다른 양상</span>
+</div>
+
+<div class="os-grid">
+  <!-- iOS -->
+  <div class="os-card ios">
+    <div class="os-header">
+      <div>
+        <div class="os-name ios">🍎 iOS</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:3px;">iOS_LV1_UAC 2개 캠페인 합산 (260511~0517)</div>
+      </div>
+      <div class="os-share ios">비용 점유율 <strong>2.7%</strong></div>
+    </div>
+
+    <div class="os-mini-grid">
+      <div class="os-mini">
+        <div class="lbl">총 비용</div>
+        <div class="val" style="color:var(--ios)">₩1.36M</div>
+        <div class="sub">전주 ₩1.58M (-14%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">첫설치</div>
+        <div class="val" style="color:var(--ios)">78</div>
+        <div class="sub">전주 75 (+4%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">회원가입</div>
+        <div class="val" style="color:var(--ios)">32</div>
+        <div class="sub">전주 31 (+3%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">가입 전환율</div>
+        <div class="val" style="color:var(--green)">41.0%</div>
+        <div class="sub">AOS 대비 2배 ↑</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">CPNI</div>
+        <div class="val" style="color:var(--red)">₩17,399</div>
+        <div class="sub">AOS의 3.9배 ↑</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">CPA</div>
+        <div class="val" style="color:var(--red)">₩42,410</div>
+        <div class="sub">AOS의 2.0배 ↑</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">첫설치 D7 ARPU</div>
+        <div class="val" style="color:var(--orange)">₩14,021</div>
+        <div class="sub">AOS의 2.7배</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">회원가입 D7 ARPU</div>
+        <div class="val" style="color:var(--red)">₩4,712</div>
+        <div class="sub" style="color:var(--red);">AOS의 0.48배 (역전)</div>
+      </div>
+    </div>
+
+    <div class="os-ratio-grid">
+      <div class="os-ratio neg">
+        <div class="lbl">첫설치 ratio<br><span style="font-size:10px;">ARPU/CPNI</span></div>
+        <div class="val">81%</div>
+        <div class="sub">전주 49% → +31%p</div>
+      </div>
+      <div class="os-ratio neg">
+        <div class="lbl">회원가입 ratio<br><span style="font-size:10px;">ARPU/CPA</span></div>
+        <div class="val">11%</div>
+        <div class="sub" style="color:var(--red);">전주 38% → -27%p ⚠️</div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px; padding:11px 13px; background:rgba(248,81,73,.08); border:1px solid rgba(248,81,73,.22); border-radius:6px; font-size:12px; color:var(--text); line-height:1.6;">
+      <strong style="color:var(--red);">🚨 iOS의 결정적 이상</strong> · 첫설치 ARPU ₩14,021 &gt; 회원가입 ARPU ₩4,712 <strong>역전 현상</strong>.
+      정상이면 가입자가 더 많이 사야 하는데, iOS는 정반대 → 첫설치 코호트에 <strong>"이미 사는 능력이 있는 기존 회원"이 다수 섞여있음</strong>이 강력히 시사됨.
+      여기에 SKAN First Installs(172) vs 실제(28)의 6배 차이까지 더해져 어트리뷰션 정합성 문제 의심.
+    </div>
+  </div>
+
+  <!-- AOS -->
+  <div class="os-card aos">
+    <div class="os-header">
+      <div>
+        <div class="os-name aos">🤖 AOS</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:3px;">AOS_LV1_UAC + Install 캠페인 11개 합산 (260512~0518)</div>
+      </div>
+      <div class="os-share aos">비용 점유율 <strong>97.3%</strong></div>
+    </div>
+
+    <div class="os-mini-grid">
+      <div class="os-mini">
+        <div class="lbl">총 비용</div>
+        <div class="val" style="color:var(--aos)">₩49.56M</div>
+        <div class="sub">전주 ₩45.77M (+8%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">첫설치</div>
+        <div class="val" style="color:var(--aos)">11,098</div>
+        <div class="sub">전주 9,268 (+20%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">회원가입</div>
+        <div class="val" style="color:var(--aos)">2,348</div>
+        <div class="sub">전주 1,631 (+44%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">가입 전환율</div>
+        <div class="val" style="color:var(--yellow)">21.2%</div>
+        <div class="sub">전주 17.6% (+3.6%p)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">CPNI</div>
+        <div class="val" style="color:var(--green)">₩4,466</div>
+        <div class="sub">전주 ₩4,938 (-10%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">CPA</div>
+        <div class="val" style="color:var(--green)">₩21,106</div>
+        <div class="sub">전주 ₩28,061 (-25%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">첫설치 D7 ARPU</div>
+        <div class="val" style="color:var(--red)">₩5,274</div>
+        <div class="sub" style="color:var(--red);">전주 ₩7,690 (-31%)</div>
+      </div>
+      <div class="os-mini">
+        <div class="lbl">회원가입 D7 ARPU</div>
+        <div class="val" style="color:var(--red)">₩9,910</div>
+        <div class="sub" style="color:var(--red);">전주 ₩14,917 (-34%)</div>
+      </div>
+    </div>
+
+    <div class="os-ratio-grid">
+      <div class="os-ratio pos">
+        <div class="lbl">첫설치 ratio<br><span style="font-size:10px;">ARPU/CPNI</span></div>
+        <div class="val">118%</div>
+        <div class="sub">전주 156% → -38%p</div>
+      </div>
+      <div class="os-ratio neg">
+        <div class="lbl">회원가입 ratio<br><span style="font-size:10px;">ARPU/CPA</span></div>
+        <div class="val">47%</div>
+        <div class="sub">전주 53% → -6%p</div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px; padding:11px 13px; background:rgba(61,220,132,.08); border:1px solid rgba(61,220,132,.22); border-radius:6px; font-size:12px; color:var(--text); line-height:1.6;">
+      <strong style="color:var(--aos);">📊 AOS는 정상 패턴 + 양적 회복</strong> · 회원가입 ARPU(₩9,910) &gt; 첫설치 ARPU(₩5,274) 정상.
+      4주간 하락하던 신규 유입이 W20에 반등(+20%), CPNI/CPA 모두 큰 폭 개선.
+      다만 두 ratio가 118% vs 47%로 큰 갭 → AOS에도 일정 수준의 <strong>리타겟팅 혼입 가능성</strong> 존재.
+      ARPU 자체는 전주 대비 -31~34% 하락으로 질적 부진 동반.
+    </div>
+  </div>
+</div>
+
+<!-- iOS vs AOS 핵심 인사이트 카드 3개 -->
+<div class="insight-banner cols-3">
+  <div class="insight-item" style="--ac:var(--ios)">
+    <div class="ih">
+      <span class="itag">🍎 iOS · 비효율 + 의심</span>
+      <span class="ititle">CPNI 3.9배 비싼데, 가입자 가치는 AOS의 절반</span>
+    </div>
+    <div class="ibody">
+      · 단가는 비싸고(CPNI 17,399) 가입 전환율은 41%로 좋아 보이지만,<br>
+      · 가입자가 만들어내는 매출(₩4,712)이 AOS(₩9,910)의 절반<br>
+      · 회원가입 ratio 11%는 사실상 광고비 회수 불능<br>
+      · ARPU 역전 현상은 리타겟팅 혼입의 직접 증거
+    </div>
+  </div>
+
+  <div class="insight-item" style="--ac:var(--aos)">
+    <div class="ih">
+      <span class="itag">🤖 AOS · 양적 회복 + 질적 부진</span>
+      <span class="ititle">신규 유입 +20%, ARPU -31%</span>
+    </div>
+    <div class="ibody">
+      · 비용/유저당 단가 모두 큰 폭 개선<br>
+      · 가입 전환율도 17.6% → 21.2%로 개선<br>
+      · 다만 D7 ARPU가 두 지표 모두 -30%+ 하락<br>
+      · "더 많이, 더 싸게" 데려왔지만 "데려온 사람이 덜 산다"
+    </div>
+  </div>
+
+  <div class="insight-item" style="--ac:var(--orange)">
+    <div class="ih">
+      <span class="itag">🔄 공통 · 리타겟팅 의혹</span>
+      <span class="ititle">두 OS 모두 두 ratio의 갭이 큼</span>
+    </div>
+    <div class="ibody">
+      · iOS 갭: 81% vs 11% (70%p)<br>
+      · AOS 갭: 118% vs 47% (71%p)<br>
+      · 갭의 일관성은 두 OS 공통적으로 첫설치 코호트에 비-신규 가입자가 섞여 있음을 시사<br>
+      · 다만 iOS는 ARPU 역전까지 동반 → 훨씬 심각
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 4. OS별 차트 비교                            -->
+<!-- ══════════════════════════════════════════ -->
+<div class="chart-grid-2">
+  <div class="chart-card">
+    <div class="chart-card-title">iOS vs AOS · 두 KPI ratio 비교 (W19→W20)</div>
+    <div class="chart-card-sub">두 OS 모두 회원가입 ratio가 첫설치 ratio보다 현저히 낮음 · iOS 회원가입 ratio 급락이 가장 심각</div>
+    <div class="chart-wrap-tall"><canvas id="chart-os-ratio"></canvas></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-title">ARPU vs 획득 비용 · OS별</div>
+    <div class="chart-card-sub">iOS는 ARPU 역전(첫설치 &gt; 가입), AOS는 정상 (가입 &gt; 첫설치)</div>
+    <div class="chart-wrap-tall"><canvas id="chart-os-arpu"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 5. WoW 통합 KPI 카드                          -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="dot" style="background:var(--google-blue)"></span>
+  W20 통합 KPI (vs W19 WoW) · iOS+AOS 합산
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card" style="--ac:var(--google-blue)">
+    <div class="kpi-label">총 마케팅 비용</div>
+    <div class="kpi-value">₩50.9M</div>
+    <div class="kpi-sub">전주 ₩47.4M · <span class="warn">+7.5%</span></div>
+  </div>
+  <div class="kpi-card" style="--ac:var(--google-blue)">
+    <div class="kpi-label">첫 설치 수</div>
+    <div class="kpi-value">11,176</div>
+    <div class="kpi-sub">전주 9,343 · <span class="up">+19.6% ↑</span></div>
+  </div>
+  <div class="kpi-card" style="--ac:var(--google-blue)">
+    <div class="kpi-label">회원 가입 수</div>
+    <div class="kpi-value">2,380</div>
+    <div class="kpi-sub">전주 1,662 · <span class="up">+43.2% ↑</span></div>
+  </div>
+  <div class="kpi-card" style="--ac:var(--google-blue)">
+    <div class="kpi-label">첫 구매자 수</div>
+    <div class="kpi-value">799</div>
+    <div class="kpi-sub">전주 1,134 · <span class="down">-29.5% ↓</span></div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card" style="--ac:var(--green)">
+    <div class="kpi-label">CPNI <span style="font-size:11px;color:var(--muted)">(↓ 좋음)</span></div>
+    <div class="kpi-value">₩4,556</div>
+    <div class="kpi-sub">전주 ₩5,068 · <span class="up">-10.1% ↓</span></div>
+  </div>
+  <div class="kpi-card" style="--ac:var(--green)">
+    <div class="kpi-label">CPA <span style="font-size:11px;color:var(--muted)">(↓ 좋음)</span></div>
+    <div class="kpi-value">₩21,392</div>
+    <div class="kpi-sub">전주 ₩28,491 · <span class="up">-24.9% ↓</span></div>
+  </div>
+  <div class="kpi-card" style="--ac:var(--red)">
+    <div class="kpi-label">첫설치 D7 누적 ARPU <span style="font-size:11px;color:var(--muted)">(↑ 좋음)</span></div>
+    <div class="kpi-value">₩5,335</div>
+    <div class="kpi-sub">전주 ₩7,712 · <span class="down">-30.8% ↓</span></div>
+  </div>
+  <div class="kpi-card" style="--ac:var(--red)">
+    <div class="kpi-label">회원가입 D7 누적 ARPU <span style="font-size:11px;color:var(--muted)">(↑ 좋음)</span></div>
+    <div class="kpi-value">₩9,840</div>
+    <div class="kpi-sub">전주 ₩15,000 · <span class="down">-34.4% ↓</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 6. 8주 추세                                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="dot" style="background:var(--google-green)"></span>
+  8주 트렌드 (W13~W20) · 효율은 회복, 가치는 하락
+</div>
+
+<div class="chart-grid-2">
+  <div class="chart-card">
+    <div class="chart-card-title">💰 비용 효율 추세 · CPNI / CPA</div>
+    <div class="chart-card-sub">W17~W19까지 악화 후 W20에 반등 — CPA -25%, CPNI -11%</div>
+    <div class="chart-wrap"><canvas id="chart-eff"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title">🛒 ROAS / 가입 전환율 추세</div>
+    <div class="chart-card-sub">ROAS W17 151% → W20 226% 회복 / 가입 전환율 18.5% → 20.4% 소폭 회복</div>
+    <div class="chart-wrap"><canvas id="chart-roas"></canvas></div>
+  </div>
+</div>
+
+<div class="chart-grid-2">
+  <div class="chart-card">
+    <div class="chart-card-title">👥 유저 획득 볼륨 추세</div>
+    <div class="chart-card-sub">W18 최저점 후 W19~W20 반등 — 단, 첫구매자만 W19 162→W20 123 감소</div>
+    <div class="chart-wrap"><canvas id="chart-volume"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-title">💎 D7 누적 ARPU vs 획득 비용 (W19→W20)</div>
+    <div class="chart-card-sub">두 ARPU 모두 30% 이상 급락 — 양의 회복과 질의 악화 동반</div>
+    <div class="chart-wrap"><canvas id="chart-arpu"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 7. 캠페인별 효율                              -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="dot" style="background:var(--google-red)"></span>
+  캠페인별 효율 · "어디에 집중하고, 어디에서 빼야 하는가"
+  <span class="snote">· W20 기준 · OS · 비용 큰 순</span>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>OS · 캠페인</th>
+        <th>유형</th>
+        <th>비용</th>
+        <th>첫설치</th>
+        <th>가입</th>
+        <th>가입 전환율</th>
+        <th>첫구매</th>
+        <th>CPNI</th>
+        <th>CPA</th>
+        <th>첫설치 ARPU</th>
+        <th>가입 ARPU</th>
+        <th>첫설치 ratio</th>
+        <th>가입 ratio</th>
+        <th>판정</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- iOS 먼저 (작은 비중이지만 위에 배치해서 OS 분리 가시화) -->
+      <tr>
+        <td>🍎 iOS_LV1_UAC_1834남성</td>
+        <td>iOS 핵심</td>
+        <td>₩733,919</td>
+        <td>28</td>
+        <td>11</td>
+        <td>39.3%</td>
+        <td>9</td>
+        <td>₩26,211</td>
+        <td>₩66,720</td>
+        <td>₩4,149</td>
+        <td>₩1,982</td>
+        <td><span class="ratio-badge neg">16%</span></td>
+        <td><span class="ratio-badge neg">3%</span></td>
+        <td><span class="ratio-badge flag">🚨 ARPU 역전</span></td>
+      </tr>
+      <tr>
+        <td>🍎 iOS_LV1_UAC_1834남녀_스트릿</td>
+        <td>iOS 카테고리</td>
+        <td>₩623,190</td>
+        <td>50</td>
+        <td>21</td>
+        <td>42.0%</td>
+        <td>9</td>
+        <td>₩12,464</td>
+        <td>₩29,676</td>
+        <td>₩19,550</td>
+        <td>₩4,842</td>
+        <td><span class="ratio-badge pos">157%</span></td>
+        <td><span class="ratio-badge neg">16%</span></td>
+        <td><span class="ratio-badge flag">🚨 ARPU 역전</span></td>
+      </tr>
+      <tr class="tot-row">
+        <td colspan="2">iOS 소계</td>
+        <td>₩1,357,109</td>
+        <td>78</td>
+        <td>32</td>
+        <td>41.0%</td>
+        <td>18</td>
+        <td>₩17,399</td>
+        <td>₩42,410</td>
+        <td>₩14,021</td>
+        <td>₩4,712</td>
+        <td><span class="ratio-badge neg">81%</span></td>
+        <td><span class="ratio-badge neg">11%</span></td>
+        <td><span class="ratio-badge flag">🚨 OS 전체 이상</span></td>
+      </tr>
+
+      <!-- AOS 캠페인 -->
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남성</td>
+        <td>핵심 대규모</td>
+        <td>₩31,974,208</td>
+        <td>6,123</td>
+        <td>1,153</td>
+        <td>18.8%</td>
+        <td>538</td>
+        <td>₩5,222</td>
+        <td>₩27,731</td>
+        <td>₩7,071</td>
+        <td>₩15,038</td>
+        <td><span class="ratio-badge pos">135%</span></td>
+        <td><span class="ratio-badge warn">54%</span></td>
+        <td><span class="ratio-badge warn">절반 양</span></td>
+      </tr>
+      <tr>
+        <td>🤖 Install_(251024)_1834남성_구매전환</td>
+        <td>구매전환</td>
+        <td>₩11,503,339</td>
+        <td>3,263</td>
+        <td>885</td>
+        <td>27.1%</td>
+        <td>108</td>
+        <td>₩3,525</td>
+        <td>₩12,998</td>
+        <td>₩1,809</td>
+        <td>₩3,442</td>
+        <td><span class="ratio-badge neg">51%</span></td>
+        <td><span class="ratio-badge neg">26%</span></td>
+        <td><span class="ratio-badge neg">양 부진</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남성_맨즈케어</td>
+        <td>카테고리</td>
+        <td>₩2,011,984</td>
+        <td>840</td>
+        <td>173</td>
+        <td>20.6%</td>
+        <td>82</td>
+        <td>₩2,395</td>
+        <td>₩11,630</td>
+        <td>₩8,025</td>
+        <td>₩10,089</td>
+        <td><span class="ratio-badge pos">335%</span></td>
+        <td><span class="ratio-badge warn">87%</span></td>
+        <td><span class="ratio-badge pos">★ 양질</span></td>
+      </tr>
+      <tr>
+        <td>🤖 Install_(250410)_1834남성</td>
+        <td>설치 신규</td>
+        <td>₩1,719,290</td>
+        <td>439</td>
+        <td>42</td>
+        <td>9.6%</td>
+        <td>9</td>
+        <td>₩3,916</td>
+        <td>₩40,935</td>
+        <td>₩1,503</td>
+        <td>₩3,170</td>
+        <td><span class="ratio-badge neg">38%</span></td>
+        <td><span class="ratio-badge neg">8%</span></td>
+        <td><span class="ratio-badge neg">⛔ 정리</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남녀_forvideo</td>
+        <td>비디오</td>
+        <td>₩800,651</td>
+        <td>109</td>
+        <td>22</td>
+        <td>20.2%</td>
+        <td>2</td>
+        <td>₩7,345</td>
+        <td>₩36,393</td>
+        <td>₩1,802</td>
+        <td>₩0</td>
+        <td><span class="ratio-badge neg">25%</span></td>
+        <td><span class="ratio-badge zero">0%</span></td>
+        <td><span class="ratio-badge neg">⛔ 검토</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남녀_스트릿</td>
+        <td>카테고리</td>
+        <td>₩735,589</td>
+        <td>121</td>
+        <td>25</td>
+        <td>20.7%</td>
+        <td>10</td>
+        <td>₩6,079</td>
+        <td>₩29,424</td>
+        <td>₩1,797</td>
+        <td>₩10,594</td>
+        <td><span class="ratio-badge neg">30%</span></td>
+        <td><span class="ratio-badge neg">36%</span></td>
+        <td><span class="ratio-badge neg">양 부진</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남녀_리퍼비시</td>
+        <td>카테고리</td>
+        <td>₩499,546</td>
+        <td>133</td>
+        <td>38</td>
+        <td>28.6%</td>
+        <td>19</td>
+        <td>₩3,756</td>
+        <td>₩13,146</td>
+        <td>₩7,262</td>
+        <td>₩12,714</td>
+        <td><span class="ratio-badge pos">193%</span></td>
+        <td><span class="ratio-badge warn">97%</span></td>
+        <td><span class="ratio-badge pos">★ 양질</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남녀_프로모션</td>
+        <td>프로모션</td>
+        <td>₩95,142</td>
+        <td>24</td>
+        <td>2</td>
+        <td>8.3%</td>
+        <td>2</td>
+        <td>₩3,964</td>
+        <td>₩47,571</td>
+        <td>₩5,417</td>
+        <td>₩0</td>
+        <td><span class="ratio-badge pos">137%</span></td>
+        <td><span class="ratio-badge zero">0%</span></td>
+        <td><span class="ratio-badge warn">샘플 부족</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남녀_테크웨어</td>
+        <td>카테고리</td>
+        <td>₩74,829</td>
+        <td>15</td>
+        <td>1</td>
+        <td>6.7%</td>
+        <td>2</td>
+        <td>₩4,989</td>
+        <td>₩74,829</td>
+        <td>₩8,970</td>
+        <td>₩0</td>
+        <td><span class="ratio-badge pos">180%</span></td>
+        <td><span class="ratio-badge zero">0%</span></td>
+        <td><span class="ratio-badge warn">샘플 부족</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834남녀_베이직</td>
+        <td>카테고리</td>
+        <td>₩72,638</td>
+        <td>16</td>
+        <td>3</td>
+        <td>18.8%</td>
+        <td>3</td>
+        <td>₩4,540</td>
+        <td>₩24,213</td>
+        <td>₩10,544</td>
+        <td>₩85,833</td>
+        <td><span class="ratio-badge pos">232%</span></td>
+        <td><span class="ratio-badge pos">355%</span></td>
+        <td><span class="ratio-badge pos">★ 확대</span></td>
+      </tr>
+      <tr>
+        <td>🤖 AOS_LV1_UAC_1834여성</td>
+        <td>여성 타겟</td>
+        <td>₩69,893</td>
+        <td>15</td>
+        <td>4</td>
+        <td>26.7%</td>
+        <td>6</td>
+        <td>₩4,660</td>
+        <td>₩17,473</td>
+        <td>₩8,020</td>
+        <td>₩0</td>
+        <td><span class="ratio-badge pos">172%</span></td>
+        <td><span class="ratio-badge zero">0%</span></td>
+        <td><span class="ratio-badge warn">샘플 부족</span></td>
+      </tr>
+      <tr class="tot-row">
+        <td colspan="2">AOS 소계</td>
+        <td>₩49,557,108</td>
+        <td>11,098</td>
+        <td>2,348</td>
+        <td>21.2%</td>
+        <td>781</td>
+        <td>₩4,466</td>
+        <td>₩21,106</td>
+        <td>₩5,274</td>
+        <td>₩9,910</td>
+        <td><span class="ratio-badge pos">118%</span></td>
+        <td><span class="ratio-badge neg">47%</span></td>
+        <td>—</td>
+      </tr>
+      <tr class="tot-row" style="background:rgba(88,166,255,.08);">
+        <td colspan="2">🔵 Google Ads 전체</td>
+        <td>₩50,914,217</td>
+        <td>11,176</td>
+        <td>2,380</td>
+        <td>21.3%</td>
+        <td>799</td>
+        <td>₩4,556</td>
+        <td>₩21,392</td>
+        <td>₩5,335</td>
+        <td>₩9,840</td>
+        <td><span class="ratio-badge warn">117%</span></td>
+        <td><span class="ratio-badge neg">46%</span></td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ARPU 역전 신호 캠페인 정리 -->
+<div class="insight-banner cols-3">
+  <div class="insight-item" style="--ac:var(--green)">
+    <div class="ih">
+      <span class="itag">★ 확대 권고</span>
+      <span class="ititle">맨즈케어 · 리퍼비시 · 베이직 (AOS)</span>
+    </div>
+    <div class="ibody">
+      두 KPI 모두 양 또는 BEP 근접<br>
+      · <strong>맨즈케어</strong>: 가입 ratio 87% (BEP 근접) — AOS 가입자 ARPU가 첫설치 ARPU보다 높음 (정상)<br>
+      · <strong>리퍼비시</strong>: 가입 전환율 28.6% (전체의 1.4배), 두 ratio 193%/97%<br>
+      · <strong>베이직</strong>: 작은 규모, 가입자 ARPU 이상치 가능성 검증 필요
+    </div>
+    <div class="iaction" style="background:rgba(63,185,80,.1); border-color:rgba(63,185,80,.25); color:var(--green);">
+      <strong>액션</strong> · 맨즈케어/리퍼비시 예산 +30~50% 점진 확대
+    </div>
+  </div>
+
+  <div class="insight-item" style="--ac:var(--red)">
+    <div class="ih">
+      <span class="itag">🚨 ARPU 역전 (리타겟팅 의심)</span>
+      <span class="ititle">iOS 전체 2개 캠페인</span>
+    </div>
+    <div class="ibody">
+      첫설치 ARPU &gt; 회원가입 ARPU 역전<br>
+      · <strong>iOS_1834남성</strong>: 첫설치 ₩4,149 &gt; 가입 ₩1,982<br>
+      · <strong>iOS_스트릿</strong>: 첫설치 ₩19,550 &gt; 가입 ₩4,842<br>
+      → 신규 캠페인인데 매출의 대부분이 비-신규 가입자에게서 발생<br>
+      → "신규 유저 획득"이라는 목적과 어긋남
+    </div>
+    <div class="iaction" style="background:rgba(248,81,73,.1); border-color:rgba(248,81,73,.25); color:var(--red);">
+      <strong>액션</strong> · SKAN 어트리뷰션 정밀 진단 / UAC 타겟 익스클루전 검토
+    </div>
+  </div>
+
+  <div class="insight-item" style="--ac:var(--orange)">
+    <div class="ih">
+      <span class="itag">⛔ 즉시 정리 권고</span>
+      <span class="ititle">250410 · forvideo · 250410</span>
+    </div>
+    <div class="ibody">
+      두 KPI 모두 30% 이하 + 가입 전환율 낮음<br>
+      · <strong>Install_(250410)</strong>: 가입 전환율 9.6%, CPA ₩40,935<br>
+      · <strong>forvideo</strong>: 비디오인데 가입 매출 기여 0<br>
+      · <strong>Install_(251024)</strong>: 비용 큰데 두 ratio 모두 50% 미만
+    </div>
+    <div class="iaction" style="background:rgba(255,123,84,.1); border-color:rgba(255,123,84,.25); color:var(--orange);">
+      <strong>액션</strong> · 일시 정지 또는 소재·LP 전면 재검토
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 8. 매트릭스 산점도                            -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="dot" style="background:var(--google-yellow)"></span>
+  캠페인 산점도 · 두 KPI를 한 좌표 위에서
+  <span class="snote">· 우상단 = 양질 · 좌하단 = 부진 · iOS는 ▲ AOS는 ●</span>
+</div>
+
+<div class="chart-card" style="margin-bottom:22px;">
+  <div class="chart-card-title">두 KPI 매트릭스 · 첫설치 ratio (X) × 회원가입 ratio (Y)</div>
+  <div class="chart-card-sub">버블 크기 = 비용 규모 · 빨간 점선 = 손익분기 100% · iOS 캠페인 2개 모두 좌하단(부진 영역)에 위치</div>
+  <div class="chart-wrap-tall"><canvas id="chart-matrix"></canvas></div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 9. 종합 액션                                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="dot" style="background:var(--blue)"></span>
+  종합 · 다음 2주 액션 아이템
+</div>
+
+<div class="insight-banner cols-2">
+  <div class="insight-item" style="--ac:var(--blue)">
+    <div class="ih">
+      <span class="itag">📋 단기 (이번 주)</span>
+      <span class="ititle">데이터 정합성 + 부진 캠페인 컨트롤</span>
+    </div>
+    <ul class="ibody">
+      <li><strong>iOS 어트리뷰션 정밀 진단</strong> — SKAN 데이터 vs 실제 vs 회원가입 매칭 검증. 리타겟팅 노출 여부 매체사 확인</li>
+      <li><strong>Install_(250410) 일시 정지</strong> — 가입 전환율 9.6%, CPA ₩40,935 — 광고비 회수 어려움</li>
+      <li><strong>AOS_forvideo 콘텐츠 리뉴얼</strong> — 비디오 광고지만 가입 매출 기여 0</li>
+      <li><strong>첫구매자 -29.5% 원인 진단</strong> — W19 1,134명 → W20 799명. 가입 후 첫구매까지의 D7 funnel 점검</li>
+    </ul>
+  </div>
+
+  <div class="insight-item" style="--ac:var(--purple)">
+    <div class="ih">
+      <span class="itag">🎯 중기 (2~4주)</span>
+      <span class="ititle">"진짜 신규" 유저 획득으로 캠페인 재편</span>
+    </div>
+    <ul class="ibody">
+      <li><strong>UAC 캠페인 목표 재설정</strong> — Install 목표 → "신규 회원 가입" 또는 "신규 첫구매" 목표로 전환 검토 (리타겟팅 혼입 방지)</li>
+      <li><strong>맨즈케어/리퍼비시 +30~50% 확대</strong> — 두 KPI 양호, 카테고리 락인 효과 검증된 캠페인</li>
+      <li><strong>AOS_1834남성 LP 개선 실험</strong> — 비용의 63% 차지, 가입 전환율 18.8% → 23%+로 끌어올리면 전체 KPI에 가장 큰 영향</li>
+      <li><strong>iOS 캠페인 전략 재검토</strong> — 비중 작지만 ARPU 역전 현상이 계속되면 매체별 예산 재배분 (META 비중 확대 등)</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<script>
+const TXT='#e6edf3', MUTED='#8b949e', BORDER='rgba(48,54,61,.55)';
+Chart.defaults.color = TXT;
+Chart.defaults.borderColor = BORDER;
+Chart.defaults.font.family = "'Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+Chart.defaults.font.size = 11;
+
+const weeks = ['W13','W14','W15','W16','W17','W18','W19','W20'];
+
+// iOS vs AOS Ratio 비교
+new Chart(document.getElementById('chart-os-ratio'),{
+  type:'bar',
+  data:{
+    labels:['iOS\n첫설치 ratio','iOS\n회원가입 ratio','AOS\n첫설치 ratio','AOS\n회원가입 ratio'],
+    datasets:[
+      {label:'W19 (전주)', data:[49,38,156,53], backgroundColor:'rgba(139,148,158,.55)', borderRadius:5, borderWidth:0, barPercentage:.7},
+      {label:'W20 (현재)', data:[81,11,118,47], backgroundColor:[
+        'rgba(162,170,173,.85)', 'rgba(248,81,73,.85)', 'rgba(61,220,132,.85)', 'rgba(248,81,73,.85)'
+      ], borderRadius:5, borderWidth:0, barPercentage:.7}
+    ]
+  },
+  options:{
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}},
+      annotation:{}
+    },
+    scales:{
+      y:{beginAtZero:true, title:{display:true,text:'Ratio (%)',font:{size:10}}, ticks:{callback:v=>v+'%'}, max:170}
+    }
+  },
+  plugins:[{
+    id:'bep',
+    beforeDraw(chart){
+      const {ctx, chartArea:{left,right}, scales:{y}} = chart;
+      const y100 = y.getPixelForValue(100);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(248,81,73,.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(left, y100); ctx.lineTo(right, y100); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(248,81,73,.75)'; ctx.font = '700 11px Apple SD Gothic Neo';
+      ctx.fillText('BEP 100%', right-66, y100-5);
+      ctx.restore();
+    }
+  }]
+});
+
+// OS별 ARPU vs Cost
+new Chart(document.getElementById('chart-os-arpu'),{
+  type:'bar',
+  data:{
+    labels:['iOS','AOS'],
+    datasets:[
+      {label:'CPNI (획득 비용)', data:[17399,4466], backgroundColor:'rgba(248,81,73,.65)', borderRadius:5},
+      {label:'첫설치 D7 ARPU', data:[14021,5274], backgroundColor:'rgba(88,166,255,.85)', borderRadius:5},
+      {label:'CPA (가입 획득 비용)', data:[42410,21106], backgroundColor:'rgba(255,123,84,.65)', borderRadius:5},
+      {label:'회원가입 D7 ARPU', data:[4712,9910], backgroundColor:'rgba(188,140,255,.85)', borderRadius:5}
+    ]
+  },
+  options:{
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ₩'+ctx.parsed.y.toLocaleString()}}
+    },
+    scales:{
+      y:{beginAtZero:true, title:{display:true,text:'원 (KRW)',font:{size:10}}, ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'k'}}
+    }
+  }
+});
+
+// CPNI/CPA 트렌드
+new Chart(document.getElementById('chart-eff'), {
+  type:'line',
+  data:{labels:weeks, datasets:[
+    {label:'CPNI (원)', data:[4165,4049,4533,4905,5113,5381,5752,5094], borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,.1)', tension:.35, yAxisID:'y'},
+    {label:'CPA (원)', data:[17952,16846,20668,22445,26250,27898,31063,24948], borderColor:'#ff7b54', backgroundColor:'rgba(255,123,84,.1)', tension:.35, yAxisID:'y1'},
+  ]},
+  options:{
+    maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}},
+    scales:{
+      y:{position:'left',title:{display:true,text:'CPNI',font:{size:10},color:'#58a6ff'},ticks:{callback:v=>'₩'+(v/1000).toFixed(1)+'k'}},
+      y1:{position:'right',title:{display:true,text:'CPA',font:{size:10},color:'#ff7b54'},ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'k'}, grid:{display:false}}
+    }
+  }
+});
+
+// ROAS / 가입전환율
+new Chart(document.getElementById('chart-roas'),{
+  type:'line',
+  data:{labels:weeks, datasets:[
+    {label:'ROAS (%)', data:[186.3,219.4,176.0,171.6,151.1,164.4,231.7,226.3], borderColor:'#3fb950', backgroundColor:'rgba(63,185,80,.1)', tension:.35, yAxisID:'y'},
+    {label:'가입 전환율 (%)', data:[23.2,24.0,21.9,21.8,19.5,19.3,18.5,20.4], borderColor:'#bc8cff', backgroundColor:'rgba(188,140,255,.1)', tension:.35, yAxisID:'y1'},
+  ]},
+  options:{
+    maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}},
+    scales:{
+      y:{position:'left',title:{display:true,text:'ROAS',font:{size:10},color:'#3fb950'},ticks:{callback:v=>v+'%'}},
+      y1:{position:'right',title:{display:true,text:'가입 전환율',font:{size:10},color:'#bc8cff'},ticks:{callback:v=>v+'%'}, grid:{display:false},min:15,max:30}
+    }
+  }
+});
+
+// 유저 획득 볼륨
+new Chart(document.getElementById('chart-volume'),{
+  type:'line',
+  data:{labels:weeks, datasets:[
+    {label:'일평균 첫설치', data:[1888,1997,1787,1748,1576,1462,1350,1592], borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,.08)', tension:.35, fill:true, yAxisID:'y'},
+    {label:'일평균 회원가입', data:[438,480,392,382,307,282,250,325], borderColor:'#bc8cff', backgroundColor:'rgba(188,140,255,.08)', tension:.35, fill:true, yAxisID:'y'},
+    {label:'일평균 첫구매자', data:[150,154,149,148,135,142,162,123], borderColor:'#ff7b54', backgroundColor:'transparent', tension:.35, yAxisID:'y2', borderDash:[4,4]},
+  ]},
+  options:{
+    maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}}},
+    scales:{
+      y:{position:'left',title:{display:true,text:'설치/가입 (명)',font:{size:10}}, beginAtZero:true},
+      y2:{position:'right',title:{display:true,text:'첫구매자',font:{size:10},color:'#ff7b54'}, grid:{display:false}, min:100, max:200}
+    }
+  }
+});
+
+// D7 ARPU (W19, W20)
+new Chart(document.getElementById('chart-arpu'),{
+  type:'bar',
+  data:{
+    labels:['W19 (이전주)','W20 (현재주)'],
+    datasets:[
+      {label:'첫설치 D7 ARPU', data:[7712,5335], backgroundColor:'#58a6ff', borderRadius:6},
+      {label:'회원가입 D7 ARPU', data:[15000,9840], backgroundColor:'#bc8cff', borderRadius:6},
+      {label:'CPNI', data:[5068,4556], backgroundColor:'rgba(248,81,73,.6)', borderRadius:6},
+      {label:'CPA', data:[28491,21392], backgroundColor:'rgba(255,123,84,.6)', borderRadius:6},
+    ]
+  },
+  options:{
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:11},boxWidth:10}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ₩'+ctx.parsed.y.toLocaleString()}}
+    },
+    scales:{
+      y:{beginAtZero:true, title:{display:true,text:'원 (KRW)',font:{size:10}}, ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'k'}}
+    }
+  }
+});
+
+// 매트릭스 산점도 (iOS = 삼각형, AOS = 원)
+const aosData = [
+  {label:'AOS_1834남성', x:135, y:54, r:32, color:'rgba(61,220,132,.55)'},
+  {label:'AOS_251024 구매전환', x:51, y:26, r:24, color:'rgba(248,81,73,.55)'},
+  {label:'AOS_맨즈케어', x:335, y:87, r:14, color:'rgba(63,185,80,.7)'},
+  {label:'AOS_250410', x:38, y:8, r:13, color:'rgba(248,81,73,.55)'},
+  {label:'AOS_forvideo', x:25, y:0.5, r:11, color:'rgba(248,81,73,.55)'},
+  {label:'AOS_스트릿', x:30, y:36, r:11, color:'rgba(210,153,34,.55)'},
+  {label:'AOS_리퍼비시', x:193, y:97, r:9, color:'rgba(63,185,80,.7)'},
+  {label:'AOS_프로모션', x:137, y:0.5, r:7, color:'rgba(210,153,34,.55)'},
+  {label:'AOS_테크웨어', x:180, y:0.5, r:6, color:'rgba(210,153,34,.55)'},
+  {label:'AOS_베이직', x:232, y:355, r:6, color:'rgba(63,185,80,.7)'},
+  {label:'AOS_여성', x:172, y:0.5, r:6, color:'rgba(210,153,34,.55)'}
+];
+const iosData = [
+  {label:'iOS_1834남성', x:16, y:3, r:11, color:'rgba(162,170,173,.9)'},
+  {label:'iOS_스트릿', x:157, y:16, r:10, color:'rgba(162,170,173,.9)'}
+];
+
+new Chart(document.getElementById('chart-matrix'),{
+  type:'bubble',
+  data:{datasets:[
+    ...aosData.map(d=>({
+      label:'🤖 '+d.label,
+      data:[{x:d.x, y:d.y, r:d.r}],
+      backgroundColor:d.color,
+      borderColor:d.color.replace(/[\d.]+\)$/,'1)'),
+      borderWidth:1.5
+    })),
+    ...iosData.map(d=>({
+      label:'🍎 '+d.label,
+      data:[{x:d.x, y:d.y, r:d.r}],
+      backgroundColor:d.color,
+      borderColor:'#ffffff',
+      borderWidth:2,
+      pointStyle:'triangle'
+    }))
+  ]},
+  options:{
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'right', labels:{font:{size:10},boxWidth:8, padding:5, usePointStyle:true}},
+      tooltip:{callbacks:{
+        label:ctx=>`${ctx.dataset.label}: 첫설치 ${ctx.parsed.x}% / 회원가입 ${ctx.parsed.y}%`
+      }}
+    },
+    scales:{
+      x:{
+        title:{display:true,text:'첫설치 D7 ARPU / CPNI (%) →',font:{size:11}},
+        min:0, max:400,
+        grid:{color:'rgba(48,54,61,.4)'}
+      },
+      y:{
+        title:{display:true,text:'회원가입 D7 ARPU / CPA (%) ↑',font:{size:11}},
+        min:0, max:400,
+        grid:{color:'rgba(48,54,61,.4)'}
+      }
+    }
+  },
+  plugins:[{
+    id:'bepLines',
+    beforeDraw(chart){
+      const {ctx, chartArea:{left,top,right,bottom}, scales:{x,y}} = chart;
+      const x100 = x.getPixelForValue(100);
+      const y100 = y.getPixelForValue(100);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(248,81,73,.5)';
+      ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(x100, top); ctx.lineTo(x100, bottom); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(left, y100); ctx.lineTo(right, y100); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(248,81,73,.7)';
+      ctx.font = '600 11px Apple SD Gothic Neo';
+      ctx.fillText('BEP 100%', x100+4, top+12);
+      ctx.fillText('BEP 100%', left+4, y100-6);
+      ctx.fillStyle = 'rgba(63,185,80,.55)';
+      ctx.font = '700 13px Apple SD Gothic Neo';
+      ctx.fillText('★ 양질 (확대)', x100+12, y100-20);
+      ctx.fillStyle = 'rgba(210,153,34,.55)';
+      ctx.fillText('절반 양', x100+12, bottom-15);
+      ctx.fillText('절반 양', left+12, y100-20);
+      ctx.fillStyle = 'rgba(248,81,73,.55)';
+      ctx.fillText('⛔ 부진 (정리)', left+12, bottom-15);
+      ctx.restore();
+    }
+  }]
+});
+</script>
+
+</body>
+</html>
