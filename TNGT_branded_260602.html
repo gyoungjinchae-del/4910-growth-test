@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TNGT 기획전 · 인플루언서 마케팅 성과 · 2026-06-02</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#0d1117; --surface:#161b22; --surface2:#1e2530; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e;
+    --blue:#58a6ff; --orange:#ff7b54; --green:#3fb950;
+    --teal:#39d0d8; --purple:#bc8cff; --red:#f85149;
+    --yellow:#d29922; --pink:#ff6eb3;
+    --brand:#bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); font-size:15px; }
+  .header { background: linear-gradient(135deg,#0d1117 0%,#251a3d 50%,#0d1117 100%); border-bottom:1px solid var(--border); padding:18px 36px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; flex-wrap:wrap; gap:10px; }
+  .header-left { display:flex; align-items:center; gap:13px; }
+  .logo { background:linear-gradient(135deg,#8b5cf0,var(--purple)); border-radius:9px; padding:6px 12px; font-weight:800; font-size:16px; letter-spacing:1px; }
+  .header h1 { font-size:18px; font-weight:700; }
+  .header-meta { font-size:13px; color:var(--muted); margin-top:2px; }
+  .header-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .badge-date { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:5px 11px; font-size:13px; color:var(--muted); }
+  .badge-done { background:rgba(139,148,158,.14); border:1px solid rgba(139,148,158,.4); border-radius:6px; padding:5px 11px; font-size:13px; color:var(--muted); font-weight:600; }
+  .tabs { background: rgba(22,27,34,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom:1px solid var(--border); padding:0 36px; display:flex; overflow-x:auto; position: sticky; top: 71px; z-index: 99; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+  .tab { padding:12px 18px; cursor:pointer; font-size:15px; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:var(--brand); border-bottom-color:var(--brand); }
+  @media(max-width:760px){ .tabs { top: 116px; } }
+  .main { padding:24px 36px; max-width:1640px; margin:0 auto; }
+  .tab-content { display:none; animation:fade .35s ease; }
+  .tab-content.active { display:block; }
+  @keyframes fade { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .section-title { font-size:16px; font-weight:700; margin:28px 0 6px; display:flex; align-items:center; gap:8px; }
+  .section-title:first-child { margin-top:4px; }
+  .section-title .bar { width:4px; height:17px; background:var(--brand); border-radius:2px; }
+  .section-desc { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.6; }
+  .section-desc b { color:var(--text); }
+  .summary-banner { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:22px; }
+  @media(max-width:900px){ .summary-banner { grid-template-columns:1fr; } }
+  .sb-card { background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--ac); border-radius:12px; padding:18px 20px; }
+  .sb-emoji { font-size:24px; margin-bottom:8px; }
+  .sb-head { font-size:16px; font-weight:800; color:var(--ac); margin-bottom:8px; line-height:1.4; }
+  .sb-body { font-size:13.5px; color:var(--muted); line-height:1.8; }
+  .sb-body b { color:var(--text); }
+  .kpi-grid { display:grid; gap:10px; margin-bottom:8px; }
+  .kpi-grid.c5 { grid-template-columns:repeat(5,1fr); }
+  .kpi-grid.c4 { grid-template-columns:repeat(4,1fr); }
+  @media(max-width:1200px){ .kpi-grid.c5 { grid-template-columns:repeat(3,1fr); } }
+  @media(max-width:1000px){ .kpi-grid.c4 { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:760px){ .kpi-grid.c5,.kpi-grid.c4 { grid-template-columns:repeat(2,1fr); } }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; position:relative; overflow:hidden; }
+  .kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:var(--ac); }
+  .kpi-label { font-size:13px; color:var(--muted); margin-bottom:6px; line-height:1.4; }
+  .kpi-value { font-size:25px; font-weight:800; color:var(--ac); margin-bottom:4px; letter-spacing:-.5px; }
+  .kpi-sub { font-size:12px; color:var(--muted); line-height:1.5; }
+  .kpi-sub b { color:var(--text); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:1000px){ .grid2 { grid-template-columns:1fr; } }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:14px; }
+  .card h3 { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .card .desc { font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+  .chart-box { position:relative; height:300px; }
+  .chart-box.short { height:240px; }
+  .table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:12px; margin-bottom:8px;}
+  table { width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px; }
+  thead th { background:var(--surface2); color:var(--muted); font-weight:600; text-align:right; padding:11px 13px; border-bottom:1px solid var(--border); white-space:nowrap; font-size:12.5px; }
+  thead th:first-child, tbody td:first-child { text-align:left; }
+  tbody td { padding:11px 13px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:rgba(255,255,255,.025); }
+  tbody tr.total-row { background:var(--surface2); font-weight:700; }
+  tbody tr.total-row td { border-top:2px solid var(--border); }
+  .inf-name { font-weight:700; color:var(--text); }
+  .pill { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; }
+  .pill.done { background:rgba(139,148,158,.16); color:var(--muted); }
+  .roas-good { color:var(--green); font-weight:800; }
+  .roas-mid { color:var(--yellow); font-weight:700; }
+  .roas-bad { color:var(--red); font-weight:700; }
+  .footnote { font-size:12px; color:var(--muted); line-height:1.7; margin-top:4px; }
+  .footnote b { color:var(--text); }
+  .explain { background:rgba(188,140,255,.07); border:1px solid rgba(188,140,255,.25); border-radius:10px; padding:14px 18px; font-size:13.5px; color:#dcc9ff; line-height:1.85; margin-bottom:16px; }
+  .explain b { color:#efe6ff; }
+  .explain .et { font-weight:800; color:#efe6ff; font-size:14px; display:block; margin-bottom:4px; }
+  .callout { background:rgba(210,153,34,.08); border:1px solid rgba(210,153,34,.28); border-radius:10px; padding:13px 16px; font-size:13.5px; color:#e0c060; line-height:1.8; margin-bottom:16px; }
+  .callout b { color:#f0d070; }
+  .callout.red { background:rgba(248,81,73,.07); border-color:rgba(248,81,73,.3); color:#f0a59f; }
+  .callout.red b { color:#ff9f96; }
+  .insight-banner { display:grid; gap:12px; margin-bottom:8px; }
+  .insight-banner.cols-2 { grid-template-columns:repeat(2,1fr); }
+  .insight-banner.cols-3 { grid-template-columns:repeat(3,1fr); }
+  @media(max-width:1000px){ .insight-banner.cols-2,.insight-banner.cols-3 { grid-template-columns:1fr; } }
+  .insight-item { background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--ac); border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; }
+  .itag { font-size:12px; font-weight:700; padding:2px 9px; border-radius:4px; background:color-mix(in srgb, var(--ac) 18%, transparent); color:var(--ac); align-self:flex-start; }
+  .ititle { font-size:15.5px; font-weight:800; color:var(--text); line-height:1.45; }
+  .ibody { font-size:13.5px; color:var(--muted); line-height:1.85; }
+  .ibody b { color:var(--text); }
+  .iaction { margin-top:2px; background:rgba(210,153,34,.1); border:1px solid rgba(210,153,34,.25); border-radius:6px; padding:9px 12px; font-size:13.5px; color:#e0c060; line-height:1.7; }
+  .iaction strong { color:#f0d070; }
+  .footer { padding:24px 36px 40px; max-width:1640px; margin:0 auto; color:var(--muted); font-size:12.5px; line-height:1.8; border-top:1px solid var(--border); margin-top:20px; }
+  .footer b { color:var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">TNGT</div>
+    <div>
+      <h1>TNGT 기획전 · 인플루언서 마케팅 성과</h1>
+      <div class="header-meta">YouTube 브랜디드 콘텐츠 · 고태용 · 제인킴</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge-date">데이터 기간 2026-05-25 ~ 05-31 (KST)</span>
+    <span class="badge-done">● 전체 종료</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="overview">📊 한눈에 보기</div>
+  <div class="tab" data-tab="mer">📈 광고 전체 효율 (MER)</div>
+  <div class="tab" data-tab="insight">💡 인사이트 &amp; 액션</div>
+</div>
+
+<div class="main">
+
+<!-- 한눈에 보기 -->
+<div class="tab-content active" id="overview">
+  <div class="summary-banner">
+    <div class="sb-card" style="--ac:var(--red)"><div class="sb-emoji">⚠️</div><div class="sb-head">인플루언서만 보면 본전 미달</div><div class="sb-body">광고비 <b>₩1,500만</b>으로 인플루언서 매출 <b>₩1,230만</b> — ROAS <b>0.8배</b>. 쓴 돈을 다 회수하진 못했습니다.</div></div>
+    <div class="sb-card" style="--ac:var(--yellow)"><div class="sb-emoji">🔎</div><div class="sb-head">전체로 보면 겨우 본전</div><div class="sb-body">구글·메타까지 합친 전체 효율(MER)은 <b>1.0배</b>. 다른 광고가 본전 회수를 도왔습니다.</div></div>
+    <div class="sb-card" style="--ac:var(--orange)"><div class="sb-emoji">📉</div><div class="sb-head">가장 큰 원인은 '도달 부족'</div><div class="sb-body">두 영상 합쳐 클릭이 <b>1,273회</b>뿐. 특히 제인킴은 <b>276회</b>로 사람들에게 거의 안 닿았습니다.</div></div>
+  </div>
+
+  <div class="section-title"><span class="bar"></span>TNGT — 한눈에</div>
+  <div class="kpi-grid c5">
+    <div class="kpi-card" style="--ac:var(--orange)"><div class="kpi-label">광고비 (인플루언서)</div><div class="kpi-value">₩1,500만</div><div class="kpi-sub">고태용·제인킴 (2편)</div></div>
+    <div class="kpi-card" style="--ac:var(--red)"><div class="kpi-label">인플루언서 매출</div><div class="kpi-value">₩1,230만</div><div class="kpi-sub">상품 구매 145건</div></div>
+    <div class="kpi-card" style="--ac:var(--red)"><div class="kpi-label">ROAS (쓴 돈 대비 매출)</div><div class="kpi-value">0.8배</div><div class="kpi-sub">본전(1배)에 못 미침</div></div>
+    <div class="kpi-card" style="--ac:var(--blue)"><div class="kpi-label">새 고객 첫 구매</div><div class="kpi-value">37건</div><div class="kpi-sub">₩380만 · 매출의 31%</div></div>
+    <div class="kpi-card" style="--ac:var(--purple)"><div class="kpi-label">신규 설치 · 가입</div><div class="kpi-value">27</div><div class="kpi-sub">회원가입 <b>87명</b></div></div>
+  </div>
+
+  <div class="section-title"><span class="bar"></span>인플루언서별 성과</div>
+  <div class="table-wrap"><table id="infTable"><thead><tr>
+    <th>인플루언서</th><th>상태</th><th>광고비</th><th>클릭</th><th>신규설치</th><th>회원가입</th>
+    <th>첫 구매</th><th>상품 구매</th><th>매출</th><th>ROAS</th><th>클릭당 구매율</th>
+  </tr></thead><tbody></tbody></table></div>
+  <div class="footnote"><b>ROAS</b> = 매출 ÷ 광고비 · <b>클릭당 구매율</b> = 상품 구매건 ÷ 클릭.</div>
+
+  <div class="grid2" style="margin-top:14px">
+    <div class="card"><h3>인플루언서별 ROAS (쓴 돈 대비 매출)</h3><div class="desc">빨간 선 = 본전(1배). 둘 다 본전 부근/이하</div><div class="chart-box"><canvas id="c_roas"></canvas></div></div>
+    <div class="card"><h3>광고비 vs 매출</h3><div class="desc">주황=쓴 돈 / 초록=번 돈</div><div class="chart-box"><canvas id="c_costrev"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>매출 중 '새 고객 첫 구매' 비중</h3><div class="desc">파랑=새 고객 첫 구매 / 초록=그 외 구매</div><div class="chart-box short"><canvas id="c_break"></canvas></div></div>
+    <div class="card"><h3>어떤 링크에서 팔렸나 — 기획전 메인 vs 본페이지</h3><div class="desc">인플루언서별 링크 매출(₩)</div><div class="chart-box short"><canvas id="c_links"></canvas></div></div>
+  </div>
+
+  <div class="explain">
+    <span class="et">📐 잠깐 — 매출은 '상품 구매' 기준입니다</span>
+    구매 데이터는 <b>① 첫 구매</b>(그 사람의 첫 주문)와 <b>② 상품 구매</b>(전체 주문) 두 종류. <b>첫 구매는 상품 구매에 이미 포함</b>되므로, 매출·ROAS는 항상 <b>'상품 구매' 값만</b> 씁니다(둘을 더하지 않아요). 첫 구매는 '새 고객을 얼마나 데려왔나' 보조 지표입니다.
+  </div>
+</div>
+
+<!-- MER -->
+<div class="tab-content" id="mer">
+  <div class="section-title"><span class="bar"></span>광고 전체 효율 (MER)</div>
+  <div class="explain">
+    <span class="et">💡 인플루언서만 보면 손해, 전부 합치면 겨우 본전</span>
+    <b>ROAS</b>(인플루언서만)는 0.8배로 본전 미달이었어요. 하지만 인플루언서 영상이 만든 관심은 검색·구글·메타 광고로도 이어집니다(채널은 서로 도움).
+    <b>구글·메타 광고비까지 합친 전체 효율(MER)은 1.0배</b> — 딱 본전입니다. 즉 다른 광고가 본전 회수를 도왔지만, <b>전체로 봐도 아직 '겨우 본전' 수준</b>이라 효율을 끌어올릴 여지가 큽니다.
+  </div>
+  <div class="kpi-grid c4">
+    <div class="kpi-card" style="--ac:var(--red)"><div class="kpi-label">인플루언서만 (ROAS)</div><div class="kpi-value">0.8배</div><div class="kpi-sub">인플루언서 매출 ₩1,230만 ÷ ₩1,500만</div></div>
+    <div class="kpi-card" style="--ac:var(--yellow)"><div class="kpi-label">전체 효율 (MER)</div><div class="kpi-value">1.0배</div><div class="kpi-sub">전체 매출 ₩2,517만 ÷ ₩2,430만</div></div>
+    <div class="kpi-card" style="--ac:var(--orange)"><div class="kpi-label">전체 광고비</div><div class="kpi-value">₩2,430만</div><div class="kpi-sub">인플루언서 ₩1,500만 + 구글·메타 ₩930만</div></div>
+    <div class="kpi-card" style="--ac:var(--green)"><div class="kpi-label">전체 매출</div><div class="kpi-value">₩2,517만</div><div class="kpi-sub">모든 채널 합산 달성 매출</div></div>
+  </div>
+  <div class="card"><h3>TNGT 광고비 합계 vs 전체 매출</h3>
+    <div class="desc">막대 = 광고비(주황 구글·메타 + 노랑 인플루언서) / ◆ = 전체 매출. 거의 같은 높이 = 겨우 본전(MER 1.0배)</div>
+    <div class="chart-box short"><canvas id="c_mer"></canvas></div>
+  </div>
+  <div class="explain">
+    <span class="et">📐 ROAS와 MER, 왜 다를까요?</span>
+    <b>ROAS</b>는 인플루언서가 직접 일으킨 매출만(₩1,230만) 봅니다. <b>MER</b>은 그 기간 TNGT의 <b>전체 매출(₩2,517만)</b>을 모든 광고비로 나눠요. 인플루언서가 만든 관심이 검색·다른 광고를 통해 추가 구매로 이어진 부분까지 포함되니 MER이 더 높게 나옵니다.
+  </div>
+</div>
+
+<!-- 인사이트 -->
+<div class="tab-content" id="insight">
+  <div class="callout red">⚠️ <b>TNGT는 인플루언서 기준 본전 미달(0.8배), 전체로 봐도 겨우 본전(1.0배)입니다.</b> 가장 큰 원인은 영상이 사람들에게 충분히 닿지 못한 것 — 다음 기획에서는 인플루언서 선정과 콘텐츠 포맷을 다시 짤 필요가 있습니다.</div>
+
+  <div class="section-title"><span class="bar"></span>진단 — 왜 아쉬웠나</div>
+  <div class="insight-banner cols-2">
+    <div class="insight-item" style="--ac:var(--yellow)"><span class="itag">고태용</span><div class="ititle">본전은 넘겼지만 규모가 작았어요</div><div class="ibody">광고비 ₩700만 / 매출 ₩930만 (<b>1.3배</b>). 클릭당 구매율(11.1%)은 무난한데, <b>클릭 자체가 997회로 적어</b> 매출 규모가 크지 않았습니다.</div></div>
+    <div class="insight-item" style="--ac:var(--red)"><span class="itag">제인킴 · 가장 아쉬움</span><div class="ititle">영상이 사람들에게 거의 안 닿았어요</div><div class="ibody">광고비 ₩800만 / 매출 ₩300만 (<b>0.4배</b>). 클릭이 <b>276회뿐</b>이라 도달이 절대적으로 부족. 누른 사람의 구매율(12.3%)은 오히려 괜찮아, <b>문제는 '얼마나 많이 봤나/눌렀나'</b>입니다.</div></div>
+  </div>
+
+  <div class="section-title"><span class="bar"></span>다음에 뭘 할까 — 액션 플랜</div>
+  <div class="insight-banner cols-3">
+    <div class="insight-item" style="--ac:var(--purple)"><span class="itag">선정 기준</span><div class="ititle">'도달 보장'을 1순위로</div><div class="iaction">TNGT의 발목을 잡은 건 도달. 차기 진행 시 <strong>최소 조회수·도달이 보장되는 인플루언서</strong>를 우선하고, <strong>사전에 채널 트래픽(평균 조회수·반응)을 검증</strong>.</div></div>
+    <div class="insight-item" style="--ac:var(--blue)"><span class="itag">콘텐츠 포맷</span><div class="ititle">링크 노출·제품 다양화</div><div class="iaction">구매로 이어지는 <strong>제품 링크를 영상 상단·고정 댓글에 명확히 노출</strong>. 기획전 메인 한 개에 의존하기보다 <strong>개별 제품 링크를 함께</strong> 넣어 전환 기회를 늘리기.</div></div>
+    <div class="insight-item" style="--ac:var(--teal)"><span class="itag">효율 측정</span><div class="ititle">전체 효율(MER)로 판단</div><div class="iaction">인플루언서 ROAS만 보면 과소평가될 수 있어요(검색·다른 광고 기여를 못 봄). <strong>구글·메타 포함 MER을 기본 지표</strong>로 두고, 목표(예: MER ≥ 2배) 대비 관리.</div></div>
+  </div>
+
+  <div class="section-title"><span class="bar"></span>TNGT 성적표</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>인플루언서</th><th>광고비</th><th>매출</th><th>ROAS</th><th>한 줄 평</th></tr></thead>
+    <tbody>
+      <tr><td class="inf-name">고태용</td><td>₩700만</td><td>₩930만</td><td class="roas-mid">1.3배</td><td style="text-align:left;color:var(--yellow)">★★★ 본전↑·규모 작음</td></tr>
+      <tr><td class="inf-name">제인킴</td><td>₩800만</td><td>₩300만</td><td class="roas-bad">0.4배</td><td style="text-align:left;color:var(--red)">★ 도달 부족·본전 미달</td></tr>
+      <tr class="total-row"><td>인플루언서 합계</td><td>₩1,500만</td><td>₩1,230만</td><td class="roas-bad">0.8배</td><td style="text-align:left;color:var(--red)">본전 미달</td></tr>
+      <tr class="total-row"><td>전체 (구글·메타 포함, MER)</td><td>₩2,430만</td><td>₩2,517만</td><td class="roas-mid">1.0배</td><td style="text-align:left;color:var(--yellow)">겨우 본전</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+</div>
+
+<div class="footer">
+  <b>데이터 출처</b> · 인플루언서지표_0602.csv (MMP 트래킹, 2026-05-25~05-31 KST) + 인플루언서비용_0602.csv ·
+  <b>매출</b> = 상품 구매(COMPLETE_ORDER_PER_GOODS) 값 · <b>첫 구매</b>는 상품 구매에 포함되는 부분 지표라 합산하지 않음 ·
+  <b>MER</b> = 전체 매출 ÷ 전체 광고비(인플루언서+구글+메타) · TNGT는 시즌 구분 없이 한 번에 진행·종료 ·
+  <b>247은 별도 대시보드 참고</b> (예산 규모·목표·전략 제품이 달라 직접 비교하지 않음).
+</div>
+
+<script>
+const fmtKRW = v => '₩' + Math.round(v).toLocaleString('ko-KR');
+const fmtMoney = v => v>=1e8 ? '₩'+(v/1e8).toFixed(2)+'억' : (v>=1e7? '₩'+Math.round(v/1e4).toLocaleString('ko-KR')+'만' : '₩'+(v/1e4).toFixed(0)+'만');
+const fmtN = v => Math.round(v).toLocaleString('ko-KR');
+const won = v=>'₩'+(v/1e6)+'M';
+
+const INF = [
+  {name:'고태용', status:'종료', cost:7000000, clk:997, fi:21, su:75, foc:32, fov:3194130, opc:111, opv:9279700, color:'#d29922'},
+  {name:'제인킴', status:'종료', cost:8000000, clk:276, fi:6,  su:12, foc:5,  fov:609390,  opc:34,  opv:3016000, color:'#f85149'},
+];
+const LINKS = { labels:['고태용','제인킴'], main:[8260700,2620000], sub:[1019000,396000] };
+const MER = {rev:25166073, paid:9295660, inf:15000000};
+MER.spend = MER.paid + MER.inf; MER.mer = MER.rev/MER.spend;
+
+Chart.defaults.color = '#8b949e';
+Chart.defaults.font.family = "'Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+Chart.defaults.font.size = 12;
+const GRID = 'rgba(255,255,255,.06)';
+const baseScale = (extra={}) => ({grid:{color:GRID}, ticks:{}, ...extra});
+function roasClass(r){ return r>=2?'roas-good':(r>=1?'roas-mid':'roas-bad'); }
+const charts={};
+
+(function(){
+  const tb=document.querySelector('#infTable tbody');
+  let T={cost:0,clk:0,fi:0,su:0,foc:0,opc:0,opv:0};
+  INF.forEach(i=>{
+    const roas=i.opv/i.cost, cvr=i.opc/i.clk*100;
+    for(const k in T) T[k]+=i[k];
+    tb.insertAdjacentHTML('beforeend',`<tr>
+      <td class="inf-name">${i.name}</td><td style="text-align:center"><span class="pill done">${i.status}</span></td>
+      <td>${fmtMoney(i.cost)}</td><td>${fmtN(i.clk)}</td><td>${fmtN(i.fi)}</td><td>${fmtN(i.su)}</td>
+      <td>${fmtN(i.foc)}건</td><td>${fmtN(i.opc)}건</td><td>${fmtMoney(i.opv)}</td>
+      <td class="${roasClass(roas)}">${roas.toFixed(1)}배</td><td>${cvr.toFixed(1)}%</td></tr>`);
+  });
+  tb.insertAdjacentHTML('beforeend',`<tr class="total-row">
+    <td>합계</td><td style="text-align:center">—</td>
+    <td>${fmtMoney(T.cost)}</td><td>${fmtN(T.clk)}</td><td>${fmtN(T.fi)}</td><td>${fmtN(T.su)}</td>
+    <td>${fmtN(T.foc)}건</td><td>${fmtN(T.opc)}건</td><td>${fmtMoney(T.opv)}</td>
+    <td class="${roasClass(T.opv/T.cost)}">${(T.opv/T.cost).toFixed(1)}배</td><td>${(T.opc/T.clk*100).toFixed(1)}%</td></tr>`);
+})();
+
+function build(){
+  charts.roas=new Chart(document.getElementById('c_roas'),{type:'bar',
+    data:{labels:INF.map(i=>i.name),datasets:[{data:INF.map(i=>+(i.opv/i.cost).toFixed(2)),backgroundColor:INF.map(i=>i.color),borderRadius:6,maxBarThickness:80}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'ROAS '+c.parsed.y+'배'}}},
+      scales:{y:baseScale({ticks:{callback:v=>v+'배'},suggestedMax:1.5}),x:baseScale({grid:{display:false}})}}});
+  const be={id:'be',afterDraw(c){const{ctx,chartArea,scales}=c;const y=scales.y.getPixelForValue(1);if(y<chartArea.top||y>chartArea.bottom)return;
+    ctx.save();ctx.strokeStyle='rgba(248,81,73,.8)';ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(chartArea.left,y);ctx.lineTo(chartArea.right,y);ctx.stroke();
+    ctx.fillStyle='rgba(248,81,73,.95)';ctx.font='11px sans-serif';ctx.fillText('본전 (1배)',chartArea.left+6,y-5);ctx.restore();}};
+  charts.roas.config.plugins=[be];charts.roas.update();
+
+  charts.costrev=new Chart(document.getElementById('c_costrev'),{type:'bar',
+    data:{labels:INF.map(i=>i.name),datasets:[
+      {label:'쓴 돈 (광고비)',data:INF.map(i=>i.cost),backgroundColor:'#ff7b54',borderRadius:5,maxBarThickness:40},
+      {label:'번 돈 (매출)',data:INF.map(i=>i.opv),backgroundColor:'#3fb950',borderRadius:5,maxBarThickness:40}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtKRW(c.parsed.y)}}},
+      scales:{y:baseScale({ticks:{callback:won}}),x:baseScale({grid:{display:false}})}}});
+
+  charts.brk=new Chart(document.getElementById('c_break'),{type:'bar',
+    data:{labels:INF.map(i=>i.name),datasets:[
+      {label:'새 고객 첫 구매',data:INF.map(i=>i.fov),backgroundColor:'#58a6ff',stack:'g',maxBarThickness:56},
+      {label:'그 외 구매 (추가·재구매)',data:INF.map(i=>i.opv-i.fov),backgroundColor:'#3fb950',stack:'g',borderRadius:5,maxBarThickness:56}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtKRW(c.parsed.y),
+      footer:items=>{const i=INF[items[0].dataIndex];return '전체 매출: '+fmtKRW(i.opv)+'  ·  새 고객 비중 '+(i.fov/i.opv*100).toFixed(0)+'%';}}}},
+      scales:{y:baseScale({stacked:true,ticks:{callback:won}}),x:baseScale({stacked:true,grid:{display:false}})}}});
+
+  charts.links=new Chart(document.getElementById('c_links'),{type:'bar',
+    data:{labels:LINKS.labels,datasets:[
+      {label:'기획전 메인링크',data:LINKS.main,backgroundColor:'#bc8cff',stack:'g',maxBarThickness:56},
+      {label:'기획전 본페이지',data:LINKS.sub,backgroundColor:'#8b6fc0',stack:'g',borderRadius:5,maxBarThickness:56}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtKRW(c.parsed.y)}}},
+      scales:{y:baseScale({stacked:true,ticks:{callback:won}}),x:baseScale({stacked:true,grid:{display:false}})}}});
+
+  charts.mer=new Chart(document.getElementById('c_mer'),{
+    data:{labels:['TNGT 전체'],datasets:[
+      {type:'bar',label:'구글·메타 광고비',data:[MER.paid],backgroundColor:'#ff7b54',stack:'cost',maxBarThickness:90},
+      {type:'bar',label:'인플루언서 광고비',data:[MER.inf],backgroundColor:'#d29922',stack:'cost',borderRadius:5,maxBarThickness:90},
+      {type:'scatter',label:'전체 매출',data:[MER.rev],backgroundColor:'#3fb950',pointStyle:'rectRot',radius:14,borderColor:'#fff',borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtKRW(c.parsed.y),
+      footer:()=>'전체 효율 MER '+MER.mer.toFixed(1)+'배'}}},
+      scales:{y:baseScale({stacked:true,ticks:{callback:won}}),x:baseScale({stacked:true,grid:{display:false}})}}});
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); document.getElementById(t.dataset.tab).classList.add('active');
+  Object.values(charts).forEach(c=>c.resize());
+}));
+build();
+</script>
+</body>
+</html>
